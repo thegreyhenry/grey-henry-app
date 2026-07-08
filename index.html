@@ -727,7 +727,7 @@ function setBusy(b){const e=$('busy');if(e)e.classList.toggle('on',!!b);}
 const SB_URL='https://aprzeqqjtwtbaoqbdolv.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFwcnplcXFqdHd0YmFvcWJkb2x2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NzY1MjYsImV4cCI6MjA5NzQ1MjUyNn0.AxNIw_2qJf32ne8XslXFFMjV4dU9jLlFkOOxmUmD0QM';
 const _pf=(u,o={})=>{const h={};const hs=o.headers;if(hs){if(typeof hs.forEach==='function'){hs.forEach((v,k)=>{h[k]=v;});}else{Object.assign(h,hs);}}return fetch(u,Object.assign({},o,{headers:h}));};
-const sb=window.supabase?window.supabase.createClient(SB_URL,SB_KEY):null;
+const sb=window.supabase?window.supabase.createClient(SB_URL,SB_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storageKey: 'gh-auth', storage: window.localStorage } }createClien):null; const VAPID_PUBLIC = 'BNiJU1xJAV-PW9emu1KsKTv93KkKvGqvB5Jlf8bRc82XO7oJmgSyjM-vobXY2un1eEe6UY02HI-pRmxYVt6EtDQ'; function _b64(b){const p='='.repeat((4-b.length%4)%4);const s=(b+p).replace(/-/g,'+').replace(/_/g,'/');return Uint8Array.from([...atob(s)].map(c=>c.charCodeAt(0)));} async function enablePush(){ try{ if(!('serviceWorker' in navigator)||!('PushManager' in window)){toast('Powiadomienia nieobsługiwane na tym urządzeniu');return;} if((await Notification.requestPermission())!=='granted'){toast('Brak zgody na powiadomienia');return;} const reg=await navigator.serviceWorker.ready; const sub=(await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:_b64(VAPID_PUBLIC)})).toJSON(); await sb.from('push_subscriptions').upsert({user_id:state.user.id,endpoint:sub.endpoint,p256dh:sub.keys.p256dh,auth:sub.keys.auth,user_agent:navigator.userAgent},{onConflict:'endpoint'}); toast('Powiadomienia włączone'); }catch(e){toast('Nie udało się włączyć powiadomień');} } async function testPush(){ try{ await sb.functions.invoke('send-push',{body:{title:"Henry's Table",body:'Powiadomienia działają!',url:'/'}}); }catch(e){} }t(SB_URL,SB_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storageKey: 'gh-auth', storage: window.localStorage } })
 const DIFFL={easy:'Łatwy',medium:'Średni',hard:'Trudny'};
 const WASHES=['green','parch','forest','gold'];
 function mapDbRecipe(r,ings,steps,tagKeys,i){
@@ -898,7 +898,7 @@ function renderAccount(){
     <button class="btn btn-gold" style="width:100%;margin-bottom:26px" onclick="changePassword()">Zmień hasło</button>
     <div class="sprig" style="margin:6px 0 18px"><span>APLIKACJA</span></div>
     <button class="outbtn" style="width:100%;margin-bottom:10px;justify-content:center" onclick="installApp('ios')">${ico('book')} Zainstaluj na iPhone</button>
-    <button class="outbtn" style="width:100%;margin-bottom:12px;justify-content:center" onclick="installApp('android')">${ico('send')} Zainstaluj na Androidzie</button>
+    <button class="outbtn" style="width:100%;margin-bottom:12px;justify-content:center" onclick="installApp('android')">${ico('send')} Zainstaluj na Androidzie</button><button class="outbtn" onclick="enablePush()">${ico('bell')} Włącz powiadomienia</button>
     <p class="muted" style="margin:-2px 0 26px;font-size:12px;line-height:1.6">Otwórz tę stronę na telefonie i dodaj ją jako aplikację (PWA). iPhone (Safari): Udostępnij ⬆️ → „Do ekranu początkowego". Android (Chrome): menu ⋮ → „Zainstaluj aplikację".</p>
     <button class="outbtn" style="width:100%;margin-bottom:30px" onclick="doLogout()">Wyloguj się</button>
   </div>`;
