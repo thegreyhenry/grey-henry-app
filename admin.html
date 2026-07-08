@@ -129,6 +129,7 @@ td .row{display:flex;gap:6px;flex-wrap:wrap}
       <a data-v="comments"><span class="ic">❝</span> Komentarze</a>
       <a data-v="tags"><span class="ic">⌗</span> Tagi</a>
       <a data-v="announce"><span class="ic">✦</span> Ogłoszenia</a>
+      <a data-v="push"><span class="ic">🔔</span> Powiadomienia</a>
     </nav>
     <div class="sb-foot">
       <div class="who" id="whoami"></div>
@@ -219,7 +220,7 @@ async function refreshAll(){
 function setView(v){view=v;document.querySelectorAll('#nav a').forEach(a=>a.classList.toggle('active',a.dataset.v===v));render();}
 document.getElementById('nav').addEventListener('click',e=>{const a=e.target.closest('a');if(a&&a.dataset.v)setView(a.dataset.v);});
 
-const TITLES={dash:['Pulpit','Przegląd najważniejszych liczb'],mod:['Moderacja','Przepisy oczekujące na akceptację'],recipes:['Przepisy','Wszystkie przepisy w bazie'],import:['Import zbiorczy','Masowe dodawanie przepisów'],users:['Użytkownicy','Konta, role i dostęp'],comments:['Komentarze','Najnowsze komentarze'],tags:['Tagi','Taksonomia kategorii'],announce:['Ogłoszenia','Komunikaty dla społeczności']};
+const TITLES={dash:['Pulpit','Przegląd najważniejszych liczb'],mod:['Moderacja','Przepisy oczekujące na akceptację'],recipes:['Przepisy','Wszystkie przepisy w bazie'],import:['Import zbiorczy','Masowe dodawanie przepisów'],users:['Użytkownicy','Konta, role i dostęp'],comments:['Komentarze','Najnowsze komentarze'],tags:['Tagi','Taksonomia kategorii'],announce:['Ogłoszenia','Komunikaty dla społeczności'],push:['Powiadomienia','Wyślij powiadomienie push do subskrybentów']};
 function render(){
   $('vtitle').textContent=TITLES[view][0];$('vsub').textContent=TITLES[view][1];
   if(view==='dash')return renderDash();
@@ -230,6 +231,7 @@ function render(){
   if(view==='comments')return renderComments();
   if(view==='tags')return renderTags();
   if(view==='announce')return renderAnnounce();
+  if(view==='push')return renderPush();
 }
 
 function statusName(k){return {approved:'Opublikowane',pending:'Oczekujące',rejected:'Odrzucone',draft:'Szkice'}[k]||k;}
@@ -565,6 +567,46 @@ function renderAnnounce(){
   else html+='<table><thead><tr><th>Tytuł</th><th>Treść</th><th>Data</th><th></th></tr></thead><tbody>'+list.map(a=>`<tr><td><b>${esc(a.title)}</b></td><td class="muted-cell">${esc((a.body||'').slice(0,120))}${(a.body||'').length>120?'…':''}</td><td class="muted-cell">${fmtD(a.created_at)}</td><td><button class="btn sm danger" onclick="delAnnouncement('${a.id}')">Usuń</button></td></tr>`).join('')+'</tbody></table>';
   html+='</div>';
   $('view').innerHTML=html;
+}
+function renderPush(){
+  let html=`<div class="panel"><div class="panel-h"><h3>Powiadomienia push</h3></div>
+  <div style="padding:14px 18px">
+    <p id="pushAudience" class="muted-cell" style="margin:0 0 10px">Subskrybentów: …</p>
+    <label class="muted-cell" style="display:block;margin-bottom:4px">Tytuł</label>
+    <input id="pushTitle" maxlength="120" placeholder="np. Nowy przepis w Henry&#39;s Table!" style="margin-bottom:10px">
+    <label class="muted-cell" style="display:block;margin-bottom:4px">Treść</label>
+    <textarea id="pushBody" rows="3" maxlength="300" placeholder="Treść powiadomienia…"></textarea>
+    <label class="muted-cell" style="display:block;margin:10px 0 4px">Link po kliknięciu (opcjonalnie)</label>
+    <input id="pushUrl" placeholder="/" style="margin-bottom:10px">
+    <div style="margin-top:12px">
+      <button class="btn gold" type="button" onclick="sendBroadcastPush()">Wyślij do wszystkich</button>
+    </div>
+    <p id="pushStatus" style="margin-top:10px;opacity:.8"></p>
+  </div></div>`;
+  $('view').innerHTML=html;
+  loadPushAudience();
+}
+async function loadPushAudience(){
+  try{
+    const { data, error } = await sb.rpc('push_audience_count');
+    if(error) throw error;
+    const el=document.getElementById('pushAudience');
+    if(el) el.textContent='Subskrybentów: '+(data.devices||0)+' urządzeń ('+(data.users||0)+' użytkowników)';
+  }catch(e){}
+}
+async function sendBroadcastPush(){
+  const title=(document.getElementById('pushTitle').value||'').trim();
+  const body=(document.getElementById('pushBody').value||'').trim();
+  const url=(document.getElementById('pushUrl').value||'/').trim();
+  const status=document.getElementById('pushStatus');
+  if(!title && !body){ if(status) status.textContent='Wpisz tytuł lub treść.'; return; }
+  if(!confirm('Wysłać powiadomienie do wszystkich subskrybentów?')) return;
+  if(status) status.textContent='Wysyłanie…';
+  try{
+    const { data, error } = await sb.functions.invoke('send-push', { body:{ broadcast:true, title, body, url } });
+    if(error) throw error;
+    if(status) status.textContent='Wysłano do '+(data.sent||0)+' z '+(data.subscriptions||0)+' urządzeń'+(data.removed?(' · usunięto martwych: '+data.removed):'')+(data.failed?(' · błędy: '+data.failed):'');
+  }catch(e){ if(status) status.textContent='Błąd wysyłki: '+(e.message||e); }
 }
 async function createAnnouncement(){
   const title=$('an_title').value.trim(),body=$('an_body').value.trim();
