@@ -4,7 +4,7 @@
    - Same-origin static assets (icons, logos, manifest): cache-first
    - Cross-origin (Supabase API, CDNs, fonts): bypass entirely — never cached, so data/auth stay fresh
 */
-const VERSION = 'gh-v6';
+const VERSION = 'gh-v7';
 const SHELL = [
   './',
   './index.html',
@@ -73,4 +73,22 @@ self.addEventListener('notificationclick', e => {
             for (const c of list) if ('focus' in c) { c.navigate(url); return c.focus(); }
             return clients.openWindow ? clients.openWindow(url) : null;
      }));
+});
+
+// Cache listy przepisow i tagow: szybki start + dzialanie offline na ostatnich danych
+const DATA_CACHE = 'gh-data-v1';
+self.addEventListener('fetch', event => {
+     const req = event.request;
+     if (req.method !== 'GET') return;
+     let url; try { url = new URL(req.url); } catch(_) { return; }
+     const isData = url.hostname.endsWith('supabase.co')
+       && url.pathname.startsWith('/rest/v1/')
+       && (url.pathname.includes('/recipes') || url.pathname.includes('/tags') || url.pathname.includes('/recipe_'));
+     if (!isData) return;
+     event.respondWith((async () => {
+            const cache = await caches.open(DATA_CACHE);
+            const cached = await cache.match(req);
+            const network = fetch(req).then(res => { if (res && res.status === 200) cache.put(req, res.clone()); return res; }).catch(() => null);
+            return cached || (await network) || new Response('[]', { headers: { 'Content-Type': 'application/json' } });
+     })());
 });
