@@ -4,7 +4,7 @@
    - Same-origin static assets (icons, logos, manifest): cache-first
    - Cross-origin (Supabase API, CDNs, fonts): bypass entirely — never cached, so data/auth stay fresh
 */
-const VERSION = 'gh-v5';
+const VERSION = 'gh-v6';
 const SHELL = [
   './',
   './index.html',
@@ -59,5 +59,18 @@ self.addEventListener('fetch', e => {
   );
 });
 
-self.addEventListener('push', e => { let d = {}; try { d = e.data ? e.data.json() : {}; } catch(_) {} e.waitUntil(self.registration.showNotification(d.title || "Henry's Table", { body: d.body || '', icon: 'logo/icon-192.png', badge: 'logo/icon-192.png', tag: d.tag || 'henry', data: { url: d.url || '/' } })); });
-self.addEventListener('notificationclick', e => { e.notification.close(); const url = (e.notification.data && e.notification.data.url) || '/'; e.waitUntil(clients.matchAll({ type:'window', includeUncontrolled:true }).then(list => { for (const c of list) if ('focus' in c) { c.navigate(url); return c.focus(); } return clients.openWindow ? clients.openWindow(url) : null; })); });
+self.addEventListener('push', e => {
+     let d = {}; try { d = e.data ? e.data.json() : {}; } catch(_) {}
+     e.waitUntil(self.registration.showNotification(d.title || "Henry's Table", {
+            body: d.body || '', icon: 'logo/icon-192.png', badge: 'logo/icon-192.png',
+            tag: d.tag || 'henry', data: { url: d.url || '/' }
+     }));
+});
+self.addEventListener('notificationclick', e => {
+     e.notification.close();
+     const url = (e.notification.data && e.notification.data.url) || '/';
+     e.waitUntil(clients.matchAll({ type:'window', includeUncontrolled:true }).then(list => {
+            for (const c of list) if ('focus' in c) { c.navigate(url); return c.focus(); }
+            return clients.openWindow ? clients.openWindow(url) : null;
+     }));
+});
