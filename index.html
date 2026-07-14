@@ -614,9 +614,9 @@ body.t-light .sheet-box{background:#FBF8F1;color:#23302B}
 <body class="t-light">
 <div class="framewrap">
   <div class="device">
-    <div class="splash" id="splash"><img src="logo/crest_ivory.png" alt="The Grey Henry Society"><div class="tag">Troska godna rodowodu</div></div>
+    <div class="splash" id="splash"><img src="logo/crest_ivory.png" alt="The Grey Henry Society" loading="lazy" decoding="async"><div class="tag">Troska godna rodowodu</div></div>
     <div class="login" id="login"><div class="login-card">
-      <img src="logo/crest_green.png" alt="The Grey Henry Society"><div class="eyebrow">The Grey Henry Society</div>
+      <img src="logo/crest_green.png" alt="The Grey Henry Society" loading="lazy" decoding="async"><div class="eyebrow">The Grey Henry Society</div>
       <h2 id="authTitle">Henry's Table</h2>
       <p id="authSub">Zaloguj się, aby zarządzać psami, ulubionymi i własnymi przepisami.</p>
       <div class="authtabs">
@@ -868,7 +868,7 @@ async function doForgot(){
 function showRecovery(){
   const l=$('login');if(!l)return;
   l.classList.add('show');
-  l.innerHTML=`<img src="${CREST}" alt=""><div class="eyebrow">The Grey Henry Society</div><h2>Ustaw nowe hasło</h2><p>Wpisz nowe hasło do swojego konta.</p>
+  l.innerHTML=`<img src="${CREST}" alt="" loading="lazy" decoding="async"><div class="eyebrow">The Grey Henry Society</div><h2>Ustaw nowe hasło</h2><p>Wpisz nowe hasło do swojego konta.</p>
     <input id="rec_pass" type="password" placeholder="Nowe hasło (min. 6 znaków)">
     <input id="rec_pass2" type="password" placeholder="Powtórz hasło">
     <button class="btn" onclick="doSetNewPassword()">Zapisz nowe hasło</button>`;
@@ -1001,7 +1001,7 @@ function diffDots(r){const lv=({easy:1,medium:2,hard:3})[r.diffLevel||({'Łatwy'
 function recipeCardHTML(r,full){
   const [bc,bt]=BADGE[r.badge];
   return `<div class="rcard ${full?'full':''}" onclick="openRecipe('${r.id}')">
-    <div class="thumb ${r.wash}"${r.thumb?` style="background-image:linear-gradient(180deg,rgba(0,0,0,.04),rgba(0,0,0,.28)),url('${r.thumb}');background-size:cover;background-position:center"`:''}>${r.thumb?'':`<img class="wm" src="${MONOG}" alt="">`}<button class="cardfav ${state.favs.has(r.id)?'on':''}" onclick="event.stopPropagation();toggleFav('${r.id}')" aria-label="Ulubione">${ico('heart')}</button><span class="badge ${bc}">${bt}</span></div>
+    <div class="thumb ${r.wash}"${r.thumb?` style="background-image:linear-gradient(180deg,rgba(0,0,0,.04),rgba(0,0,0,.28)),url('${r.thumb}');background-size:cover;background-position:center"`:''}>${r.thumb?'':`<img class="wm" src="${MONOG}" alt="" loading="lazy" decoding="async">`}<button class="cardfav ${state.favs.has(r.id)?'on':''}" onclick="event.stopPropagation();toggleFav('${r.id}')" aria-label="Ulubione">${ico('heart')}</button><span class="badge ${bc}">${bt}</span></div>
     <h4>${r.name}</h4>
     <div class="sub"><span>${r.time}</span><span class="dot">·</span><span>${r.kcal}</span>${r.ratingCount?`<span class="dot">·</span><span>${star} ${r.rating}</span>`:''}</div></div>`;
 }
@@ -1024,14 +1024,14 @@ function renderHome(){
   const favList=RECIPES.filter(r=>state.favs.has(r.id));
   const quick=[['m_sniadanie','Śniadania'],['m_obiad','Obiady'],['m_smaczek','Smaczki'],['a_szczeniak','Szczenięta'],['a_senior','Seniory'],['g_lekko','Lekkostrawne']];
   return `
-  <div class="brandbar"><img class="crest" src="${CREST}" alt="The Grey Henry Society">${state.user?`<button class="bell" onclick="openNotifsScreen()" aria-label="Powiadomienia">${ico('bell')}${(state.notifs||[]).filter(n=>!n.read).length?`<span class="bdot">${(state.notifs||[]).filter(n=>!n.read).length}</span>`:''}</button>`:''}</div>
+  <div class="brandbar"><img class="crest" src="${CREST}" alt="The Grey Henry Society" loading="lazy" decoding="async">${state.user?`<button class="bell" onclick="openNotifsScreen()" aria-label="Powiadomienia">${ico('bell')}${(state.notifs||[]).filter(n=>!n.read).length?`<span class="bdot">${(state.notifs||[]).filter(n=>!n.read).length}</span>`:''}</button>`:''}</div>
   <div class="pad greetrow"><span class="greet">Dzień dobry</span><b>${dog?('Gotujemy dla '+escH(dog.name)):"Henry's Table"}</b></div>
   ${state.user&&!state.dogs.length?`<div class="pad"><div class="onboard" onclick="goAddDog()"><div class="ob-i">${ico('user')}</div><div style="flex:1"><b>Dodaj profil swojego psa</b><p>Spersonalizuj przepisy, alergie i porcje — zajmie chwilę.</p></div>${ico('chev')}</div></div>`:''}
   <div class="pad"><div class="searchwrap">${ico('search')}<input id="homeSearch" placeholder="Szukaj przepisu lub składnika…" value="${state.q}" oninput="homeSearch(this.value)">${state.q?`<button class="clr" onclick="setQ('')" aria-label="Wyczyść">${ico('x')}</button>`:''}</div>
   <button class="morebtn" style="margin-top:10px" onclick="goFilters()">${ico('filter')} Filtry i kategorie</button></div>
   <div class="chips qcats">${quick.map(([c,l])=>`<button class="chip" onclick="goCat('${c}')">${l}</button>`).join('')}</div>
   <div class="pad"><div class="hero">
-    <img src="${MONOG}" alt="" style="position:absolute;top:16px;right:16px;width:66px;opacity:.12;z-index:0;pointer-events:none">
+    <img src="${MONOG}" alt="" style="position:absolute;top:16px;right:16px;width:66px;opacity:.12;z-index:0;pointer-events:none" loading="lazy" decoding="async">
     <span class="eyebrow">Polecane dnia</span><h3>${featured.name}</h3><p>${featured.desc}</p>
     <div class="meta"><span>${featured.time}</span><span>${featured.kcal}</span><span>${featured.ratingCount?star+' '+featured.rating:'Nowość'}</span></div>
     <div style="margin-top:18px"><button class="btn btn-gold" onclick="openRecipe('${featured.id}')">Zobacz przepis</button></div>
@@ -1050,7 +1050,7 @@ function renderHome(){
 function footerHTML(){
   return `<div class="appfooter">
     <div class="sprig"><span>${star} ${star} ${star}</span></div>
-    <img class="ftcrest" src="${CREST}" alt="The Grey Henry Society">
+    <img class="ftcrest" src="${CREST}" alt="The Grey Henry Society" loading="lazy" decoding="async">
     <div class="ft-tag">Troska godna rodowodu</div>
     <div class="ft-install">
       <div class="ft-h">Zainstaluj na telefonie</div>
@@ -1083,7 +1083,7 @@ function renderRecipes(){
   const vis=list.slice(0,state.shown);
   const SORTS=[['rec','Polecane'],['rating','Najlepiej oceniane'],['fast','Najszybsze'],['new','Najnowsze']];
   return `
-  <div class="brandbar" style="padding:16px 0 2px"><img class="crest" src="${CREST}" style="height:52px" alt=""></div>
+  <div class="brandbar" style="padding:16px 0 2px"><img class="crest" src="${CREST}" style="height:52px" alt="" loading="lazy" decoding="async"></div>
   <div class="pad" style="text-align:center;margin-bottom:8px"><span class="eyebrow">Biblioteka przepisów</span></div>
   <div class="rsticky">
     <div class="pad searchwrap">${ico('search')}<input id="search" placeholder="Szukaj nazwy lub składnika…" value="${state.q}" oninput="setQ(this.value)">${state.q?`<button class="clr" onclick="setQ('')" aria-label="Wyczyść">${ico('x')}</button>`:''}</div>
@@ -1116,7 +1116,7 @@ function renderRecipes(){
 
 function renderAddRecipe(){
   if(!state.user){return `
-  <div class="brandbar"><img class="crest" src="${CREST}" alt="The Grey Henry Society"></div>
+  <div class="brandbar"><img class="crest" src="${CREST}" alt="The Grey Henry Society" loading="lazy" decoding="async"></div>
   <div class="pad" style="text-align:center;padding-top:24px">
     <div class="eyebrow">Dodaj przepis</div>
     <h2 class="serif" style="font-size:22px;margin:10px 0 6px">Tylko dla zalogowanych</h2>
@@ -1202,7 +1202,7 @@ function renderPlanner(){
   }).join('');
   const shop=state.shop||[];
   return `
-  <div class="brandbar" style="padding:18px 0 4px"><img class="crest" src="${CREST}" style="height:60px" alt=""></div>
+  <div class="brandbar" style="padding:18px 0 4px"><img class="crest" src="${CREST}" style="height:60px" alt="" loading="lazy" decoding="async"></div>
   <div class="pad" style="text-align:center;margin-bottom:8px"><span class="eyebrow">Tydzień psa</span><b class="serif" style="display:block;font-size:24px;font-weight:500;margin-top:6px">Planer posiłków</b></div>
   <div class="pad" style="margin-bottom:18px"><p class="muted" style="text-align:center">Ułóż posiłki na cały tydzień, a listę zakupów aplikacja przygotuje sama.</p></div>
   ${rows}
@@ -1283,11 +1283,11 @@ function renderCommunity(){
   const allC=[];Object.keys(state.comments||{}).forEach(rid=>{(state.comments[rid]||[]).forEach(c=>allC.push(c));});
   const recentC=allC.slice(-5).reverse();
   return `
-  <div class="brandbar" style="padding:18px 0 4px"><img class="crest" src="${CREST}" style="height:60px" alt=""></div>
+  <div class="brandbar" style="padding:18px 0 4px"><img class="crest" src="${CREST}" style="height:60px" alt="" loading="lazy" decoding="async"></div>
   <div class="pad" style="text-align:center;margin-bottom:18px"><span class="eyebrow">Stół wspólny</span><b class="serif" style="display:block;font-size:24px;font-weight:500;margin-top:6px">Społeczność</b></div>
   <div class="pad" style="padding-bottom:30px">
     ${(state.announcements||[]).length?`<div class="section-h"><h2 style="font-size:18px">Ogłoszenia</h2></div>
-    ${state.announcements.map(a=>`<div class="comm-post announce"><div class="ph"><div class="av crest-av"><img src="${CREST}" alt=""></div><div><b>The Grey Henry Society</b><small>Ogłoszenie · ${a.when}</small></div></div><h4 class="ann-t">${a.title}</h4><p>${a.body}</p></div>`).join('')}`:''}
+    ${state.announcements.map(a=>`<div class="comm-post announce"><div class="ph"><div class="av crest-av"><img src="${CREST}" alt="" loading="lazy" decoding="async"></div><div><b>The Grey Henry Society</b><small>Ogłoszenie · ${a.when}</small></div></div><h4 class="ann-t">${a.title}</h4><p>${a.body}</p></div>`).join('')}`:''}
     <div class="section-h"><h2 style="font-size:18px">Najnowsze przepisy</h2></div>
     ${recent.length?recent.map(r=>{const cc=(state.comments[r.id]||[]).length;return `<div class="comm-post" onclick="openRecipe('${r.id}')" style="cursor:pointer"><div class="ph"><div class="av">${(r.name||'?')[0]}</div><div><b>${r.name}</b><small>${r.diff} · ${r.time}</small></div></div>
       <div class="pic thumb ${r.wash}"${r.thumb?` style="background-image:url('${r.thumb}');background-size:cover;background-position:center"`:''}></div>
@@ -1332,7 +1332,7 @@ async function addWeight(){
 function renderProfile(){
   const favs=RECIPES.filter(r=>state.favs.has(r.id));
   return `
-  <div class="profhead"><img class="crest" src="${CREST}" alt="The Grey Henry Society"><h2>Twój profil</h2><p>The Grey Henry Society Member</p>${state.user?`<button class="outbtn" style="margin:14px auto 0;display:inline-flex;width:auto" onclick="go('account')">${ico('edit')} Edytuj profil</button>`:''}</div>
+  <div class="profhead"><img class="crest" src="${CREST}" alt="The Grey Henry Society" loading="lazy" decoding="async"><h2>Twój profil</h2><p>The Grey Henry Society Member</p>${state.user?`<button class="outbtn" style="margin:14px auto 0;display:inline-flex;width:auto" onclick="go('account')">${ico('edit')} Edytuj profil</button>`:''}</div>
   <div class="pad" style="padding-top:22px">
     <div class="section-h" style="margin-top:4px"><h2 style="font-size:18px">Profile psów</h2><a onclick="openDogForm()">+ Dodaj psa</a></div>
     ${state.dogs.map((d,i)=>dogCardHTML(d,i)).join('')}
@@ -1371,7 +1371,7 @@ function renderProfile(){
       ${state.user?`<div class="menu-item" onclick="go('account')"><span class="ic">${ico('flag')}</span><span class="lbl">Ustawienia konta</span><span class="ar">${ico('chev')}</span></div>`:''}
       ${state.user?`<div class="menu-item" onclick="doLogout()"><span class="ic">${ico('x')}</span><span class="lbl">Wyloguj</span><span class="ar">${ico('chev')}</span></div>`:''}
     </div>
-    <div class="brandsign"><img src="${CREST}" alt=""><span>Troska godna rodowodu</span></div>
+    <div class="brandsign"><img src="${CREST}" alt="" loading="lazy" decoding="async"><span>Troska godna rodowodu</span></div>
   </div>`;
 }
 function dogFormHTML(d,editing){
@@ -1383,7 +1383,7 @@ function dogFormHTML(d,editing){
   const tx=v=>v?String(v).replace(/</g,'&lt;'):'';
   return `<div style="background:rgba(244,238,225,.05);border:1px solid var(--line);border-radius:20px;padding:18px;margin-bottom:14px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><b class="serif" style="font-size:17px;font-weight:500">${editing?'Edytuj profil psa':'Nowy profil psa'}</b>${editing?`<button class="linkdel" onclick="deleteDog(${state.editingDog})">${ico('x')} Usuń psa</button>`:''}</div>
-    <div class="field"><label>Zdjęcie psa</label><input type="file" id="d_photo" accept="image/*" style="display:none" onchange="onDogPhotoPick(event)"><button class="outbtn" type="button" onclick="document.getElementById('d_photo').click()">${ico('image')} ${(pendingDogPhoto||d.photo)?'Zmień zdjęcie':'Wybierz zdjęcie'}</button><div id="d_photo_prev">${pendingDogPhoto?'<p class="muted" style="font-size:12px;margin-top:8px">Zdjęcie wybrane ✓ — zostanie zoptymalizowane.</p>':(d.photo?`<img src="${d.photo}" alt="" style="width:84px;height:84px;object-fit:cover;border-radius:50%;margin-top:8px">`:'')}</div></div>
+    <div class="field"><label>Zdjęcie psa</label><input type="file" id="d_photo" accept="image/*" style="display:none" onchange="onDogPhotoPick(event)"><button class="outbtn" type="button" onclick="document.getElementById('d_photo').click()">${ico('image')} ${(pendingDogPhoto||d.photo)?'Zmień zdjęcie':'Wybierz zdjęcie'}</button><div id="d_photo_prev">${pendingDogPhoto?'<p class="muted" style="font-size:12px;margin-top:8px">Zdjęcie wybrane ✓ — zostanie zoptymalizowane.</p>':(d.photo?`<img src="${d.photo}" alt="" style="width:84px;height:84px;object-fit:cover;border-radius:50%;margin-top:8px" loading="lazy" decoding="async">`:'')}</div></div>
     <div class="field"><label>Imię psa</label><input id="d_name" value="${at(d.name)}" placeholder="np. Henry"></div>
     <div class="row2"><div class="field"><label>Rasa lub typ</label><input id="d_breed" value="${at(d.breed)}" placeholder="np. Chart"></div><div class="field"><label>Wiek</label><input id="d_age" value="${at(d.age)}" placeholder="np. 3 lata"></div></div>
     <div class="row2"><div class="field"><label>Waga</label><input id="d_weight" value="${at(d.weight)}" placeholder="np. 20 kg"></div><div class="field"><label>Poziom aktywności</label><select id="d_act">${opt(acts,d.activity)}</select></div></div>
@@ -1486,13 +1486,13 @@ function onPhotoPick(e){
   const f=e.target.files&&e.target.files[0];if(!f)return;
   pendingPhoto=f;
   const prev=$('r_photo_prev');
-  if(prev){const url=URL.createObjectURL(f);prev.innerHTML=`<img src="${url}" alt="" style="width:100%;max-height:180px;object-fit:cover;border-radius:14px;margin-top:8px"><p class="muted" style="font-size:12px;margin-top:6px">Zostanie zmniejszone i zoptymalizowane przed wysłaniem.</p>`;}
+  if(prev){const url=URL.createObjectURL(f);prev.innerHTML=`<img src="${url}" alt="" style="width:100%;max-height:180px;object-fit:cover;border-radius:14px;margin-top:8px" loading="lazy" decoding="async"><p class="muted" style="font-size:12px;margin-top:6px">Zostanie zmniejszone i zoptymalizowane przed wysłaniem.</p>`;}
 }
 function onDogPhotoPick(e){
   const f=e.target.files&&e.target.files[0];if(!f)return;
   pendingDogPhoto=f;
   const prev=$('d_photo_prev');
-  if(prev){const url=URL.createObjectURL(f);prev.innerHTML=`<img src="${url}" alt="" style="width:84px;height:84px;object-fit:cover;border-radius:50%;margin-top:8px"><p class="muted" style="font-size:12px;margin-top:6px">Zostanie zoptymalizowane przed wysłaniem.</p>`;}
+  if(prev){const url=URL.createObjectURL(f);prev.innerHTML=`<img src="${url}" alt="" style="width:84px;height:84px;object-fit:cover;border-radius:50%;margin-top:8px" loading="lazy" decoding="async"><p class="muted" style="font-size:12px;margin-top:6px">Zostanie zoptymalizowane przed wysłaniem.</p>`;}
 }
 function goCat(c){state.tab='recipes';state.cat=c;state.q='';render();}
 function goSearch(){state.tab='recipes';render();const s=$('search');if(s)s.focus();}
@@ -1576,7 +1576,7 @@ function paintDetail(id){
   $('detailScr').innerHTML=`
     <div class="dhead thumb ${r.wash}" style="border:none;border-radius:0${r.image?`;background-image:linear-gradient(180deg,rgba(20,28,24,.12),rgba(20,28,24,.58)),url('${r.image}');background-size:cover;background-position:center`:''}">
       <div class="dscrim"></div>
-      <img src="${r.wash==='gold'||r.wash==='parch'?MONOG:MONO}" alt="" style="position:absolute;top:64px;right:20px;width:104px;opacity:.13;z-index:1;pointer-events:none">
+      <img src="${r.wash==='gold'||r.wash==='parch'?MONOG:MONO}" alt="" style="position:absolute;top:64px;right:20px;width:104px;opacity:.13;z-index:1;pointer-events:none" loading="lazy" decoding="async">
       <div class="circ-btn back" onclick="closeRecipe()" aria-label="Wróć">${ico('arrow')}</div>
       <div class="circ-btn fav ${fav?'on':''}" id="favBtn" onclick="toggleFav('${id}')" aria-label="Ulubione">${ico('heart')}</div>
       <div class="dtitle"><span class="badge ${bc}">${bt}</span><div class="eyebrow">${CATS.find(c=>c[0]===r.cat)?CATS.find(c=>c[0]===r.cat)[1]:'Przepis'}</div><h1>${r.name}</h1></div>
