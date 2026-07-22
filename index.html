@@ -626,7 +626,7 @@ body.t-light .sheet-box{background:#FBF8F1;color:#23302B}
       <input id="lg_name" placeholder="Twoje imię" autocomplete="name" style="display:none">
       <input id="lg_email" type="email" placeholder="E-mail" autocomplete="email" inputmode="email" onkeydown="if(event.key==='Enter')submitAuth()">
       <input id="lg_pass" type="password" placeholder="Hasło (min. 6 znaków)" autocomplete="current-password" onkeydown="if(event.key==='Enter')submitAuth()">
-      <button class="btn" id="authPrimary" onclick="submitAuth()">Zaloguj się</button>
+      <label id="regConsentRow" style="display:none;gap:8px;align-items:flex-start;font-size:13px;margin:10px 0"> <input type="checkbox" id="regConsent"> <span>Akceptuję <a href="regulamin.html" target="_blank">Regulamin</a> i <a href="polityka-prywatnosci.html" target="_blank">Politykę prywatności</a>.</span> </label>
       <button class="skip" id="authForgot" onclick="doForgot()">Nie pamiętasz hasła?</button>
       <div class="authdiv"><span>lub</span></div>
       <button class="btn gline" onclick="doGoogle()">Kontynuuj z Google</button>
@@ -844,12 +844,12 @@ async function start(){
 }
 async function doLogin(){const e=$('lg_email').value.trim(),p=$('lg_pass').value;if(!sb)return;const {error}=await sb.auth.signInWithPassword({email:e,password:p});if(error)return toast(error.message);toast('Zalogowano');afterLogin();}
 async function doGoogle(){if(!sb)return;const {error}=await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:window.location.href.split('#')[0]}});if(error)toast(error.message);}
-async function doRegister(){const e=$('lg_email').value.trim(),p=$('lg_pass').value,n=$('lg_name').value.trim();if(!sb)return;const {data,error}=await sb.auth.signUp({email:e,password:p,options:{data:{display_name:n}}});if(error)return toast(error.message);if(!data.session){toast('Konto utworzone — potwierdź e-mail (lub wyłącz potwierdzanie w Supabase).');}else{toast('Witamy w Henry\'s Table!');afterLogin();}}
+async function doRegister(){ if(!document.getElementById('regConsent')?.checked){ toast('Zaakceptuj Regulamin i Politykę prywatności'); return; }const e=$('lg_email').value.trim(),p=$('lg_pass').value,n=$('lg_name').value.trim();if(!sb)return;const {data,error}=await sb.auth.signUp({email:e,password:p,options:{data:{display_name:n}}});if(error)return toast(error.message);if(!data.session){toast('Konto utworzone — potwierdź e-mail (lub wyłącz potwierdzanie w Supabase).');}else{toast('Witamy w Henry\'s Table!');afterLogin();}}
 async function doLogout(){if(sb){state._intentionalSignOut=true;await sb.auth.signOut();}if(state._presenceTimer){clearInterval(state._presenceTimer);state._presenceTimer=null;}state.user=null;state.profile=null;state.favs=new Set();state.dogs=[];state.myRecipes=[];state.pending=[];state.shop=[];state.notifs=[];state.comments={};state.myRatings={};state.plan=[['Pon',null],['Wt',null],['Śr',null],['Czw',null],['Pt',null],['Sob',null],['Niedz',null]];state.tab='home';$('login').classList.add('show');render();}
 let authMode='login';
 function setAuthMode(m){
   authMode=m;const reg=m==='register';
-  const nm=$('lg_name');if(nm)nm.style.display=reg?'block':'none';
+  const nm=$('lg_name');if(nm)nm.style.display=reg?'block':'none';const rc=$('regConsentRow');if(rc)rc.style.display=reg?'flex':'none';
   const pr=$('authPrimary');if(pr)pr.textContent=reg?'Utwórz konto':'Zaloguj się';
   const tl=$('tabLogin'),tr=$('tabReg');if(tl)tl.classList.toggle('active',!reg);if(tr)tr.classList.toggle('active',reg);
   const fg=$('authForgot');if(fg)fg.style.display=reg?'none':'block';
@@ -1060,7 +1060,7 @@ function footerHTML(){
       </div>
       <p class="ft-note">Otwórz tę stronę na telefonie i dodaj ją jako aplikację — działa jak natywna, pełnoekranowo.</p>
     </div>
-    <div class="ft-copy">© ${new Date().getFullYear()} The Grey Henry Society</div>
+    <div class="ft-copy" style="margin-top:8px"><a href="regulamin.html" style="color:inherit">Regulamin</a> · <a href="polityka-prywatnosci.html" style="color:inherit">Polityka prywatności</a></div>
   </div>`;
 }
 
