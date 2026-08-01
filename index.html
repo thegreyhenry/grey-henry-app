@@ -232,6 +232,32 @@ body.t-light .pf-stat span{color:#6B7771}
 .dogcard h4{font-family:var(--serif);font-size:18px;font-weight:500}
 .dogcard .tags{display:flex;gap:7px;flex-wrap:wrap;margin-top:7px}
 .dogcard .tags em{font-style:normal;font-size:11px;background:rgba(191,177,120,.16);color:var(--gold);padding:4px 9px;border-radius:999px;letter-spacing:.02em}
+.dogcard2{position:relative;background:rgba(244,238,225,.05);border:1px solid var(--line);border-radius:22px;padding:18px 18px 16px;box-shadow:0 16px 34px -26px rgba(0,0,0,.72)}
+.dogcard2 .dogedit{position:absolute;top:14px;right:14px}
+.dc-top{display:flex;align-items:center;gap:15px}
+.dc-ava{width:66px;height:66px;border-radius:20px;flex:0 0 auto;background:linear-gradient(150deg,#8F7F48,#6c5f33);background-size:cover;background-position:center;display:grid;place-items:center;font-family:var(--serif);font-size:27px;color:var(--ivory);box-shadow:0 10px 20px -10px rgba(143,127,72,.8)}
+.dc-id{display:flex;flex-direction:column;gap:3px;min-width:0}
+.dc-id h4{font-family:var(--serif);font-size:20px;font-weight:500;line-height:1.1}
+.dc-breed{font-size:12.5px;color:#9aa69d}
+.dc-goal{align-self:flex-start;margin-top:3px;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);background:rgba(191,177,120,.14);border:1px solid rgba(191,177,120,.3);padding:3px 10px;border-radius:999px}
+.dc-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:15px}
+.dc-stat{background:rgba(0,0,0,.16);border-radius:14px;padding:10px 6px;text-align:center}
+.dc-stat span{display:block;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#8a968f}
+.dc-stat b{display:block;font-family:var(--serif);font-size:15px;font-weight:500;color:var(--ivory);margin-top:3px}
+.dc-excl{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:14px}
+.dc-excl-l{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#cf9075;margin-right:2px}
+.dc-excl em{font-style:normal;font-size:11px;background:rgba(201,124,90,.15);color:#e2a98d;border:1px solid rgba(201,124,90,.32);padding:4px 10px;border-radius:999px}
+.dc-pref{margin-top:12px;font-size:13px;color:#c7cfc8;line-height:1.5}
+.dc-note{margin-top:11px;font-family:var(--serif);font-style:italic;font-size:14px;color:#b9c2ba;line-height:1.5;padding-left:12px;border-left:2px solid rgba(191,177,120,.45)}
+body.t-light .dogcard2{background:linear-gradient(180deg,#ffffff,#fbf7ee);border-color:rgba(42,52,49,.12);box-shadow:0 18px 36px -24px rgba(40,50,45,.32)}
+body.t-light .dc-id h4{color:#23302B}
+body.t-light .dc-breed{color:#6B7771}
+body.t-light .dc-stat{background:rgba(42,52,49,.05)}
+body.t-light .dc-stat b{color:#23302B}
+body.t-light .dc-stat span{color:#8a9189}
+body.t-light .dc-pref{color:#4a544d}
+body.t-light .dc-note{color:#5a635b}
+.field select{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23BFB178' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:38px}
 .dogmeta{font-size:12px;color:#9aa69d;margin-top:8px;font-weight:300;line-height:1.5}
 .dognote{font-family:var(--serif);font-style:italic;color:#cfd6cf;font-size:13.5px;line-height:1.5;margin-top:11px;padding-left:12px;border-left:2px solid var(--gold)}
 .jentry{display:flex;gap:12px;padding:13px 0;border-bottom:1px solid rgba(191,177,120,.12)}
@@ -1016,12 +1042,18 @@ function recipeCardHTML(r,full){
     <div class="sub"><span>${r.time}</span><span class="dot">·</span><span>${r.kcal}</span>${r.ratingCount?`<span class="dot">·</span><span>${star} ${r.rating}</span>`:''}</div></div>`;
 }
 function dogCardHTML(d,i){
-  const meta=[];if(d.preferences)meta.push('Preferencje: '+escH(d.preferences));if(d.conditions&&d.conditions!=='Brak')meta.push('Ograniczenia: '+escH(d.conditions));
-  return `<div class="dogcard" style="margin-bottom:12px">${typeof i==='number'?`<button class="dogedit" onclick="openDogForm(${i})" aria-label="Edytuj">${ico('edit')}</button>`:''}<div class="ava"${d.photo?` style="background-image:url('${d.photo}');background-size:cover;background-position:center"`:''}>${d.photo?'':escH((d.name||'?').charAt(0))}</div>
-    <div style="flex:1"><h4>${escH(d.name)}</h4>
-      <div class="tags"><em>${escH(d.breed)}</em><em>${escH(d.age)}</em><em>${escH(d.weight)}</em>${d.activity?`<em>${escH(d.activity)}</em>`:''}${d.goal?`<em>${escH(d.goal)}</em>`:''}${(d.allergens||[]).map(a=>`<em>\u26A0 ${escH(a)}</em>`).join('')}${(d.forbidden||[]).map(a=>`<em>\u2298 ${escH(a)}</em>`).join('')}</div>
-      ${meta.length?`<div class="dogmeta">${meta.join(' \u00B7 ')}</div>`:''}
-      ${d.note?`<div class="dognote">\u201E${escH(d.note)}\u201D</div>`:''}</div></div>`;
+  const info=[];
+  if(d.age)info.push(['Wiek',escH(d.age)]);
+  if(d.weight)info.push(['Waga',escH(d.weight)]);
+  if(d.activity)info.push(['Aktywność',escH(String(d.activity).replace(' aktywność',''))]);
+  const excl=(d.allergens||[]).concat(d.forbidden||[]);
+  return `<div class="dogcard2" style="margin-bottom:14px">${typeof i==='number'?`<button class="dogedit" onclick="openDogForm(${i})" aria-label="Edytuj">${ico('edit')}</button>`:''}
+    <div class="dc-top"><div class="dc-ava"${d.photo?` style="background-image:url('${d.photo}')"`:''}>${d.photo?'':escH((d.name||'?').charAt(0).toUpperCase())}</div>
+    <div class="dc-id"><h4>${escH(d.name)}</h4>${d.breed?`<span class="dc-breed">${escH(d.breed)}</span>`:''}${d.goal?`<span class="dc-goal">${escH(d.goal)}</span>`:''}</div></div>
+    ${info.length?`<div class="dc-stats">${info.map(x=>`<div class="dc-stat"><span>${x[0]}</span><b>${x[1]}</b></div>`).join('')}</div>`:''}
+    ${excl.length?`<div class="dc-excl"><span class="dc-excl-l">Wyklucza</span>${excl.map(a=>`<em>⚠ ${escH(a)}</em>`).join('')}</div>`:''}
+    ${d.preferences?`<div class="dc-pref">${escH(d.preferences)}</div>`:''}
+    ${d.note?`<div class="dc-note">„${escH(d.note)}”</div>`:''}</div>`;
 }
 
 function renderHome(){
