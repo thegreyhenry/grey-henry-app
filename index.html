@@ -681,6 +681,23 @@ body.t-light .photo-av{background:#fff;border-color:rgba(42,52,49,.28);color:var
 .inputunit input{padding-right:46px}
 .inputunit .unit{position:absolute;right:15px;top:50%;transform:translateY(-50%);font-size:13px;color:#9aa69d;pointer-events:none;font-weight:600}
 body.t-light .inputunit .unit{color:#7a857c}
+.wizprog{margin:6px 0 20px}
+.wizbar-bg{height:4px;background:rgba(191,177,120,.18);border-radius:999px;overflow:hidden}
+.wizbar-fill{height:100%;width:0;background:linear-gradient(90deg,var(--gold),var(--gold2));border-radius:999px;transition:width .3s ease}
+.wizdots{display:flex;justify-content:space-between;margin-top:12px;gap:4px}
+.wizdot{display:flex;flex-direction:column;align-items:center;gap:5px;flex:1;color:#8a968f;font-size:9.5px}
+.wizdot .n{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:rgba(244,238,225,.08);border:1.5px solid var(--line);font-family:var(--sans);font-size:12px;font-weight:600;transition:.2s}
+.wizdot small{letter-spacing:.02em;text-align:center;line-height:1.15}
+.wizdot.cur{color:var(--gold)}
+.wizdot.cur .n{background:var(--gold);border-color:var(--gold);color:var(--forest)}
+.wizdot.done .n{background:rgba(191,177,120,.22);border-color:var(--gold);color:var(--gold)}
+body.t-light .wizdot .n{background:#fff}
+body.t-light .wizdot.cur .n{background:var(--green);border-color:var(--green);color:#fff}
+.wiznav{display:flex;gap:10px;align-items:center;margin:20px 0 34px}
+.wiznav .outbtn{flex:0 0 auto}
+.wiznav .btn{flex:1;margin:0}
+.wizstep{animation:wizfade .25s ease}
+@keyframes wizfade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 </style>
 </head>
 <body class="t-light">
@@ -1201,6 +1218,7 @@ function renderRecipes(){
   ${list.length>state.shown?`<div class="pad" style="padding-bottom:30px"><button class="morebtn" onclick="showMore()">Pokaż więcej (${list.length-state.shown}) ${ico('chev')}</button></div>`:'<div style="height:24px"></div>'}`;
 }
 
+let wizStep=1;
 function renderAddRecipe(){
   if(!state.user){return `
   <div class="brandbar"><img class="crest" src="${CREST}" alt="The Grey Henry Society" loading="lazy" decoding="async"></div>
@@ -1210,6 +1228,7 @@ function renderAddRecipe(){
     <p class="muted" style="margin-bottom:22px;line-height:1.6">Aby dodać własny przepis do Society, zaloguj się lub załóż bezpłatne konto.</p>
     <button class="btn btn-gold" style="width:100%" onclick="document.getElementById('login').classList.add('show')">Zaloguj się / Załóż konto</button>
   </div>`;}
+  wizStep=1;
   const groups=[
    ['Rodzaj posiłku *',[['m_sniadanie','Śniadania'],['m_obiad','Obiady'],['m_kolacja','Kolacje'],['m_przekaska','Przekąski'],['m_smaczek','Smaczki treningowe']]],
    ['Główny składnik *',[['i_kurczak','Kurczak'],['i_indyk','Indyk'],['i_wolowina','Wołowina'],['i_ryba','Ryba'],['i_jajko','Jajko'],['i_ryz','Ryż'],['i_warzywa','Warzywa']]],
@@ -1225,24 +1244,66 @@ function renderAddRecipe(){
    ['Suplementacja',[['sup_bez','Bez suplementów'],['sup_wymaga','Wymaga suplementacji']]],
    ['Sezon (np. letnie chłodzące)',[['x_sezon','Sezonowy / letni']]]
   ];
+  const stepNames=['Podstawy','Składniki','Przygotowanie','Kategorie','Wysyłka'];
   return `
   <div class="addhead"><button class="back" onclick="go('recipes')" aria-label="Wróć">${ico('arrow')}</button><h2>Dodaj przepis</h2></div>
-  <div class="pad"><p class="muted" style="margin-bottom:18px">Twój przepis trafi do moderatora i pojawi się publicznie dopiero po akceptacji. Pola oznaczone * są wymagane.</p>
-    <div class="field"><label>Nazwa przepisu *</label><input id="r_name" placeholder="np. Domowa miska z indykiem"></div>
-    <div class="field"><label>Zdjęcie dania</label><input type="file" id="r_photo" accept="image/*" style="display:none" onchange="onPhotoPick(event)"><button class="outbtn" type="button" onclick="document.getElementById('r_photo').click()">${ico('image')} ${pendingPhoto?'Zmień zdjęcie':'Wybierz zdjęcie'}</button><div id="r_photo_prev">${pendingPhoto?'<p class="muted" style="font-size:12px;margin-top:8px">Zdjęcie wybrane ✓ — zostanie zmniejszone i zoptymalizowane przed wysłaniem.</p>':''}</div></div>
-    <div class="field"><label>Krótki opis</label><textarea id="r_desc" placeholder="Dla kogo i czym wyróżnia się ten posiłek"></textarea></div>
-    <div class="row2"><div class="field"><label>Czas</label><input id="r_time" placeholder="np. 30 min"></div>
-      <div class="field"><label>Kcal (opcjonalnie)</label><input id="r_kcal" placeholder="np. 290" inputmode="numeric"></div></div>
-    <div class="field"><label>Trudność</label><select id="r_diff"><option value="easy">Łatwy</option><option value="medium">Średni</option><option value="hard">Trudny</option></select></div>
-    <div class="field"><label>Styl</label><div class="chips" id="styleChips"><button type="button" class="chip achip active" data-k="" onclick="pickStyle(this)">Regularny</button><button type="button" class="chip achip" data-k="st_premium" onclick="pickStyle(this)">Premium</button></div></div>
-    <div id="addtags">
-    ${groups.map(g=>`<div class="field"><label>${g[0]}</label><div class="chips">${g[1].map(([k,l])=>`<button type="button" class="chip achip" data-k="${k}" onclick="this.classList.toggle('active')">${l}</button>`).join('')}</div></div>`).join('')}
+  <div class="pad wizwrap">
+    <div class="wizprog"><div class="wizbar-bg"><div id="wizbar" class="wizbar-fill"></div></div>
+      <div class="wizdots">${stepNames.map((l,i)=>`<div class="wizdot ${i===0?'cur':''}" data-s="${i+1}"><span class="n">${i+1}</span><small>${l}</small></div>`).join('')}</div>
     </div>
-    <div class="field"><label>Składniki i ilości (każdy w nowej linii, format: nazwa - ilość)</label><textarea id="r_ing" placeholder="Pierś z indyka - 250 g&#10;Ryż - 80 g"></textarea></div>
-    <div class="field"><label>Sposób przygotowania (każdy krok w nowej linii)</label><textarea id="r_steps" placeholder="Ugotuj indyka bez soli…&#10;Dodaj ugotowany ryż…"></textarea></div>
-    <div class="checkrow" id="r_consent" onclick="this.classList.toggle('on')"><span class="box">${ico('check')}</span><span>Wyrażam zgodę na publikację przepisu po weryfikacji.</span></div>
-    <button class="btn btn-gold" style="width:100%;margin-bottom:30px" onclick="saveRecipe()">Wyślij do akceptacji</button>
+
+    <div class="wizstep" data-step="1">
+      <p class="muted" style="margin-bottom:16px">Zacznijmy od podstaw. Pola oznaczone * są wymagane.</p>
+      <div class="field"><label>Nazwa przepisu *</label><input id="r_name" placeholder="np. Domowa miska z indykiem"></div>
+      <div class="field"><label>Zdjęcie dania</label><input type="file" id="r_photo" accept="image/*" style="display:none" onchange="onPhotoPick(event)"><button class="outbtn" type="button" onclick="document.getElementById('r_photo').click()">${ico('image')} ${pendingPhoto?'Zmień zdjęcie':'Wybierz zdjęcie'}</button><div id="r_photo_prev">${pendingPhoto?'<p class="muted" style="font-size:12px;margin-top:8px">Zdjęcie wybrane ✓ — zostanie zoptymalizowane.</p>':''}</div></div>
+      <div class="field"><label>Krótki opis</label><textarea id="r_desc" placeholder="Dla kogo i czym wyróżnia się ten posiłek"></textarea></div>
+      <div class="row2"><div class="field"><label>Czas</label><div class="inputunit"><input id="r_time" inputmode="numeric" placeholder="np. 30"><span class="unit">min</span></div></div>
+        <div class="field"><label>Kalorie</label><div class="inputunit"><input id="r_kcal" inputmode="numeric" placeholder="np. 290"><span class="unit">kcal</span></div></div></div>
+      <div class="field"><label>Trudność</label><select id="r_diff"><option value="easy">Łatwy</option><option value="medium">Średni</option><option value="hard">Trudny</option></select></div>
+      <div class="field"><label>Styl</label><div class="chips" id="styleChips"><button type="button" class="chip achip active" data-k="" onclick="pickStyle(this)">Regularny</button><button type="button" class="chip achip" data-k="st_premium" onclick="pickStyle(this)">Premium</button></div></div>
+    </div>
+
+    <div class="wizstep" data-step="2" style="display:none">
+      <p class="muted" style="margin-bottom:16px">Wypisz składniki — każdy w nowej linii, w formacie <b>nazwa - ilość</b>.</p>
+      <div class="field"><label>Składniki i ilości</label><textarea id="r_ing" style="min-height:180px" placeholder="Pierś z indyka - 250 g&#10;Ryż - 80 g&#10;Marchew - 1 szt."></textarea><span class="hint">Przykład: „Pierś z indyka - 250 g". Ilość jest opcjonalna.</span></div>
+    </div>
+
+    <div class="wizstep" data-step="3" style="display:none">
+      <p class="muted" style="margin-bottom:16px">Opisz przygotowanie — każdy krok w nowej linii.</p>
+      <div class="field"><label>Sposób przygotowania</label><textarea id="r_steps" style="min-height:200px" placeholder="Ugotuj indyka bez soli…&#10;Dodaj ugotowany ryż…&#10;Wystudź przed podaniem."></textarea><span class="hint">Każda linia to osobny krok wyświetlany w przepisie.</span></div>
+    </div>
+
+    <div class="wizstep" data-step="4" style="display:none">
+      <p class="muted" style="margin-bottom:16px">Dobierz kategorie — to po nich psi rodzice odnajdą Twój przepis. Wymagany min. jeden <b>rodzaj posiłku</b> i jeden <b>główny składnik</b>.</p>
+      <div id="addtags">
+      ${groups.map(g=>`<div class="field"><label>${g[0]}</label><div class="chips">${g[1].map(([k,l])=>`<button type="button" class="chip achip" data-k="${k}" onclick="this.classList.toggle('active')">${l}</button>`).join('')}</div></div>`).join('')}
+      </div>
+    </div>
+
+    <div class="wizstep" data-step="5" style="display:none">
+      <p class="muted" style="margin-bottom:16px">Ostatni krok. Twój przepis trafi do moderatora i pojawi się publicznie dopiero po akceptacji.</p>
+      <div class="checkrow" id="r_consent" onclick="this.classList.toggle('on')"><span class="box">${ico('check')}</span><span>Wyrażam zgodę na publikację przepisu po weryfikacji.</span></div>
+    </div>
+
+    <div class="wiznav">
+      <button id="wizBack" class="outbtn" style="visibility:hidden" onclick="wizGo(wizStep-1)">${ico('arrow')} Wstecz</button>
+      <button id="wizNext" class="btn btn-gold" onclick="wizGo(wizStep+1)">Dalej</button>
+      <button id="wizSubmit" class="btn btn-gold" style="display:none" onclick="saveRecipe()">Wyślij do akceptacji</button>
+    </div>
   </div>`;
+}
+function wizGo(n){
+  const N=5; if(n<1||n>N)return;
+  if(n>1&&wizStep===1){const nm=document.getElementById('r_name');if(nm&&!nm.value.trim()){toast('Podaj nazwę przepisu');return;}}
+  wizStep=n;
+  document.querySelectorAll('.wizstep').forEach(el=>{el.style.display=(+el.dataset.step===n)?'block':'none';});
+  document.querySelectorAll('.wizdot').forEach(el=>{const s=+el.dataset.s;el.classList.toggle('done',s<n);el.classList.toggle('cur',s===n);});
+  const bar=document.getElementById('wizbar'); if(bar)bar.style.width=((n-1)/(N-1)*100)+'%';
+  const back=document.getElementById('wizBack'),next=document.getElementById('wizNext'),sub=document.getElementById('wizSubmit');
+  if(back)back.style.visibility=n>1?'visible':'hidden';
+  if(next)next.style.display=n<N?'inline-flex':'none';
+  if(sub)sub.style.display=n===N?'inline-flex':'none';
+  try{document.querySelector('.addhead').scrollIntoView({behavior:'smooth',block:'start'});}catch(e){}
 }
 function pickStyle(btn){const w=btn.parentNode;[...w.querySelectorAll('.achip')].forEach(b=>b.classList.remove('active'));btn.classList.add('active');}
 async function saveRecipe(){
