@@ -663,6 +663,9 @@ body.t-light .field input:focus,body.t-light .field select:focus,body.t-light .f
 .segchip.active{background:var(--gold);border-color:var(--gold);color:var(--forest);box-shadow:0 6px 16px -8px rgba(191,177,120,.75)}
 body.t-light .segchip{background:#fff;border-color:rgba(42,52,49,.2);color:#3a463f}
 body.t-light .segchip.active{background:var(--green);border-color:var(--green);color:#fff}
+.thpin{margin-left:auto;flex:0 0 auto;align-self:center;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);background:rgba(191,177,120,.14);padding:3px 9px;border-radius:999px}
+.threadrow:hover{border-color:rgba(191,177,120,.4)}
+.comm-post .linkdel{margin-left:auto}
 </style>
 </head>
 <body class="t-light">
@@ -769,7 +772,7 @@ let RECIPES=[
 const BADGE={diet:['b-diet','Przepis dietetyka'],verif:['b-verif','Zweryfikowane'],comm:['b-comm','Przepis użytkownika']};
 
 const PAGE=6;
-let state={tab:'home',user:null,profile:null,cat:'all',q:'',sort:'rec',showFilters:false,showCats:false,profileApplied:false,openGroups:new Set(),dogMatch:false,editingDog:null,journalOpen:false,shown:6,_sig:'',flags:new Set(),favs:new Set(),myRecipes:[],customShop:[],shop:[],notifs:[],favsOpen:false,weightOpen:false,announcements:[],plan:[['Pon',null],['Wt',null],['Śr',null],['Czw',null],['Pt',null],['Sob',null],['Niedz',null]],
+let state={tab:'home',user:null,profile:null,cat:'all',q:'',sort:'rec',showFilters:false,showCats:false,profileApplied:false,openGroups:new Set(),dogMatch:false,editingDog:null,journalOpen:false,shown:6,_sig:'',flags:new Set(),favs:new Set(),threads:[],activeThread:null,threadReplies:{},communityCompose:false,myRecipes:[],customShop:[],shop:[],notifs:[],favsOpen:false,weightOpen:false,announcements:[],plan:[['Pon',null],['Wt',null],['Śr',null],['Czw',null],['Pt',null],['Sob',null],['Niedz',null]],
   comments:{},
   dogs:[]};
 
@@ -789,7 +792,7 @@ function mapDbRecipe(r,ings,steps,tagKeys,i){
   return {id:r.id,name:escH(r.title),cat:(tagKeys.find(k=>k.indexOf('m_')===0)||'gotowane'),badge,wash:WASHES[i%4],
     time:r.time_min?r.time_min+' min':'—',diff:DIFFL[r.difficulty]||'Łatwy',diffLevel:r.difficulty||'easy',kcal:r.kcal?r.kcal+' kcal':'—',
     portion:r.servings?('≈ '+r.servings+' porcji'):'porcja',rating:r.rating_avg||0,ratingCount:r.rating_count||0,featured:r.featured||false,created:r.created_at||'',desc:escH(r.description||''),
-    flags:tagKeys,ing:(ings||[]).map(x=>[escH(x.name),escH(x.amount||'')]),steps:(steps||[]).map(x=>escH(x.body)),detail:(ings!=null&&steps!=null),good:[],bad:[],warn:'',status:r.status,thumb:r.thumb_url||'',image:r.image_url||''};
+    flags:tagKeys,ing:(ings||[]).map(x=>[escH(x.name),escH(x.amount||'')]),steps:(steps||[]).map(x=>escH(x.body)),detail:(ings!=null&&steps!=null),good:[],bad:[],warn:'',userMade:!!r.author_id,status:r.status,thumb:r.thumb_url||'',image:r.image_url||''};
 }
 async function loadData(){
   if(!sb)return;
@@ -807,6 +810,7 @@ async function loadData(){
   (rtags||[]).forEach(rt=>{const k=rt.tags&&rt.tags.key;if(k)(tgM[rt.recipe_id]=tgM[rt.recipe_id]||[]).push(k);});
   RECIPES=(recs||[]).map((r,i)=>mapDbRecipe(r,null,null,tgM[r.id]||[],i));
   state.collections=cols||[]; state.colRecipes=colrec||[]; state.recipeOfDay=(cfg&&cfg.value&&cfg.value.recipe_id)||null;
+  await loadThreads();
   state.favs=new Set((favs||[]).map(f=>f.recipe_id));
   try{
     const {data:cmts}=await sb.from('comments').select('recipe_id, body, created_at, profiles(display_name)').order('created_at');
@@ -1347,24 +1351,95 @@ async function generateShop(){
 }
 
 function renderCommunity(){
-  const recent=RECIPES.slice().sort((a,b)=>(b.created||'').localeCompare(a.created||'')).slice(0,8);
-  const allC=[];Object.keys(state.comments||{}).forEach(rid=>{(state.comments[rid]||[]).forEach(c=>allC.push(c));});
-  const recentC=allC.slice(-5).reverse();
+  if(state.activeThread)return renderThreadView();
+  const userRecipes=RECIPES.filter(r=>r.userMade).sort((a,b)=>(b.created||'').localeCompare(a.created||'')).slice(0,10);
+  const threads=state.threads||[];
   return `
   <div class="brandbar" style="padding:18px 0 4px"><img class="crest" src="${CREST}" style="height:60px" alt="" loading="lazy" decoding="async"></div>
-  <div class="pad" style="text-align:center;margin-bottom:18px"><span class="eyebrow">Stół wspólny</span><b class="serif" style="display:block;font-size:24px;font-weight:500;margin-top:6px">Społeczność</b></div>
+  <div class="pad" style="text-align:center;margin-bottom:16px"><span class="eyebrow">Stół wspólny</span><b class="serif" style="display:block;font-size:24px;font-weight:500;margin-top:6px">Społeczność</b></div>
   <div class="pad" style="padding-bottom:30px">
     ${(state.announcements||[]).length?`<div class="section-h"><h2 style="font-size:18px">Ogłoszenia</h2></div>
     ${state.announcements.map(a=>`<div class="comm-post announce"><div class="ph"><div class="av crest-av"><img src="${CREST}" alt="" loading="lazy" decoding="async"></div><div><b>The Grey Henry Society</b><small>Ogłoszenie · ${a.when}</small></div></div><h4 class="ann-t">${a.title}</h4><p>${a.body}</p></div>`).join('')}`:''}
-    <div class="section-h"><h2 style="font-size:18px">Najnowsze przepisy</h2></div>
-    ${recent.length?recent.map(r=>{const cc=(state.comments[r.id]||[]).length;return `<div class="comm-post" onclick="openRecipe('${r.id}')" style="cursor:pointer"><div class="ph"><div class="av">${(r.name||'?')[0]}</div><div><b>${r.name}</b><small>${r.diff} · ${r.time}</small></div></div>
-      <div class="pic thumb ${r.wash}"${r.thumb?` style="background-image:url('${r.thumb}');background-size:cover;background-position:center"`:''}></div>
-      ${r.desc?`<p>${r.desc}</p>`:''}<div class="react"><span>${ico('heart')} ${state.favs.has(r.id)?'W ulubionych':'Polub'}</span><span>${ico('chat')} ${cc}</span><span>Zobacz przepis</span></div></div>`;}).join(''):'<p class="muted">Brak przepisów. Dodaj pierwszy w zakładce „Dodaj".</p>'}
-    ${recentC.length?`<div class="section-h" style="margin-top:18px"><h2 style="font-size:18px">Ostatnie komentarze</h2></div>
-      ${recentC.map(c=>`<div class="comment"><div class="av">${(c.who||'?')[0]}</div><div><b>${c.who}</b><small>${c.when}</small><p>${c.text}</p></div></div>`).join('')}`:''}
-    <div class="sprig" style="margin:18px auto"><span>MODEROWANE Z TROSKĄ</span></div>
-    <p class="muted" style="text-align:center">Każdy przepis przechodzi weryfikację, zanim trafi do społeczności.</p>
+
+    <div class="section-h"><h2 style="font-size:18px">Najnowsze przepisy od użytkowników</h2></div>
+    ${userRecipes.length?`<div class="rail">${userRecipes.map(r=>recipeCardHTML(r)).join('')}</div>`:`<p class="muted" style="padding:2px 0 10px">Nikt jeszcze nie dodał własnego przepisu. Bądź pierwszy — <a style="color:var(--gold);cursor:pointer" onclick="go('add')">dodaj przepis</a>.</p>`}
+
+    <div class="section-h" style="margin-top:22px"><h2 style="font-size:18px">Rozmowy</h2><a onclick="startThread()">+ Nowy wątek</a></div>
+    ${state.communityCompose?threadComposeHTML():''}
+    ${threads.length?threads.map(t=>threadRowHTML(t)).join(''):(state.communityCompose?'':'<p class="muted" style="padding:2px 0 10px">Brak wątków. Rozpocznij pierwszą rozmowę — kliknij „+ Nowy wątek".</p>')}
+
+    <div class="sprig" style="margin:22px auto"><span>MODEROWANE Z TROSKĄ</span></div>
+    <p class="muted" style="text-align:center">Bądźcie dla siebie życzliwi. Wątki i przepisy są moderowane.</p>
   </div>`;
+}
+function threadComposeHTML(){
+  if(!state.user)return '<div class="comm-post"><p class="muted">Zaloguj się, aby rozpocząć wątek.</p></div>';
+  return `<div class="comm-post"><div class="field"><label>Tytuł wątku</label><input id="thTitle" placeholder="O czym chcesz porozmawiać?"></div>
+    <div class="field"><label>Treść (opcjonalnie)</label><textarea id="thBody" placeholder="Napisz coś więcej…"></textarea></div>
+    <div style="display:flex;gap:8px"><button class="btn btn-gold" style="margin:0" onclick="postThread()">Opublikuj wątek</button><button class="outbtn" onclick="cancelThread()">Anuluj</button></div></div>`;
+}
+function threadRowHTML(t){
+  return `<div class="comm-post threadrow" onclick="openThread('${t.id}')" style="cursor:pointer">
+    <div class="ph"><div class="av">${escH((t.author||'?').charAt(0).toUpperCase())}</div><div><b>${escH(t.title)}</b><small>${escH(t.author||'Użytkownik')} · ${t.when}</small></div>${t.pinned?'<span class="thpin">przypięte</span>':''}</div>
+    ${t.body?`<p>${escH(t.body.slice(0,140))}${t.body.length>140?'…':''}</p>`:''}
+    <div class="react"><span>${ico('chat')} ${t.replies} ${t.replies===1?'odpowiedź':'odpowiedzi'}</span><span>Otwórz rozmowę</span></div></div>`;
+}
+function renderThreadView(){
+  const t=(state.threads||[]).find(x=>x.id===state.activeThread);
+  if(!t){state.activeThread=null;return renderCommunity();}
+  const replies=state.threadReplies[t.id]||[];
+  const canModT=state.user&&(t.authorId===state.user.id||isStaff());
+  return `
+  <div class="addhead"><button class="back" onclick="backToCommunity()" aria-label="Wróć">${ico('arrow')}</button><h2>Rozmowa</h2></div>
+  <div class="pad" style="padding-bottom:30px">
+    <div class="comm-post"><div class="ph"><div class="av">${escH((t.author||'?').charAt(0).toUpperCase())}</div><div style="flex:1"><b>${escH(t.author||'Użytkownik')}</b><small>${t.when}</small></div>${canModT?`<button class="linkdel" onclick="deleteThread('${t.id}')">${ico('x')} Usuń</button>`:''}</div>
+      <h3 class="serif" style="font-size:20px;margin:8px 0 8px">${escH(t.title)}</h3>
+      ${t.body?`<p style="white-space:pre-wrap">${escH(t.body)}</p>`:''}</div>
+    <div class="section-h"><h2 style="font-size:16px">Odpowiedzi (${replies.length})</h2></div>
+    ${replies.length?replies.map(r=>{const canDel=state.user&&(r.authorId===state.user.id||isStaff());return `<div class="comment"><div class="av">${escH((r.author||'?').charAt(0).toUpperCase())}</div><div style="flex:1"><b>${escH(r.author||'Użytkownik')}</b><small>${r.when}</small><p style="white-space:pre-wrap">${escH(r.text)}</p></div>${canDel?`<button class="linkdel" style="align-self:flex-start" onclick="deleteReply('${r.id}','${t.id}')">${ico('x')}</button>`:''}</div>`;}).join(''):'<p class="muted" style="padding:2px 0 10px">Brak odpowiedzi. Napisz pierwszą.</p>'}
+    ${state.user?`<div class="jbox" style="margin-top:14px"><input id="replyInput" placeholder="Napisz odpowiedź…" onkeydown="if(event.key==='Enter')postReply('${t.id}')"><button onclick="postReply('${t.id}')" aria-label="Wyślij">${ico('send')}</button></div>`:'<p class="muted" style="margin-top:12px">Zaloguj się, aby odpowiadać w wątku.</p>'}
+  </div>`;
+}
+function startThread(){if(!state.user){toast('Zaloguj się, aby rozpocząć wątek');return;}state.communityCompose=true;render();}
+function cancelThread(){state.communityCompose=false;render();}
+function backToCommunity(){state.activeThread=null;render();}
+async function loadThreads(){
+  if(!sb)return;
+  try{const {data}=await sb.from('threads').select('id,title,body,created_at,updated_at,pinned,author_id,profiles(display_name),thread_replies(count)').order('pinned',{ascending:false}).order('updated_at',{ascending:false}).limit(50);
+  state.threads=(data||[]).map(t=>({id:t.id,title:t.title,body:t.body||'',author:(t.profiles&&t.profiles.display_name)||'Użytkownik',authorId:t.author_id,pinned:t.pinned,when:new Date(t.updated_at||t.created_at).toLocaleDateString('pl-PL'),replies:(t.thread_replies&&t.thread_replies[0]&&t.thread_replies[0].count)||0}));}catch(e){}
+}
+async function openThread(id){
+  state.activeThread=id;
+  try{const {data}=await sb.from('thread_replies').select('id,body,created_at,author_id,profiles(display_name)').eq('thread_id',id).order('created_at');
+  state.threadReplies[id]=(data||[]).map(r=>({id:r.id,text:r.body,author:(r.profiles&&r.profiles.display_name)||'Użytkownik',authorId:r.author_id,when:new Date(r.created_at).toLocaleDateString('pl-PL')}));}catch(e){state.threadReplies[id]=[];}
+  render();
+}
+async function postThread(){
+  const t=$('thTitle')?$('thTitle').value.trim():'',b=$('thBody')?$('thBody').value.trim():'';
+  if(!t){toast('Podaj tytuł wątku');return;}
+  if(!state.user){toast('Zaloguj się');return;}
+  const {error}=await sb.from('threads').insert({title:t,body:b,author_id:state.user.id});
+  if(error){toast('Błąd: '+error.message);return;}
+  state.communityCompose=false;toast('Opublikowano wątek');await loadThreads();render();
+}
+async function postReply(threadId){
+  const inp=$('replyInput');if(!inp||!inp.value.trim())return;
+  if(!state.user){toast('Zaloguj się');return;}
+  const {error}=await sb.from('thread_replies').insert({thread_id:threadId,body:inp.value.trim(),author_id:state.user.id});
+  if(error){toast('Błąd: '+error.message);return;}
+  await loadThreads();await openThread(threadId);
+}
+async function deleteThread(id){
+  if(!confirm('Usunąć wątek wraz z odpowiedziami?'))return;
+  const {error}=await sb.from('threads').delete().eq('id',id);
+  if(error){toast('Błąd: '+error.message);return;}
+  state.activeThread=null;toast('Usunięto wątek');await loadThreads();render();
+}
+async function deleteReply(id,threadId){
+  if(!confirm('Usunąć odpowiedź?'))return;
+  const {error}=await sb.from('thread_replies').delete().eq('id',id);
+  if(error){toast('Błąd: '+error.message);return;}
+  await loadThreads();await openThread(threadId);
 }
 
 function favBlockHTML(favs){
