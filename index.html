@@ -895,6 +895,7 @@ const CATGROUPS=[
  ['Styl',[['st_premium','Premium']]]
 ];
 const FILTERGROUPS=[
+ ['Źródło przepisu',[['diet','Od dietetyka'],['comm','Od społeczności']]],
  ['Cel żywieniowy',[['g_bialko','Wysokobiałkowe'],['g_lekko','Lekkostrawne'],['g_nisko','Niskotłuszczowe'],['g_brzuch','Wrażliwy żołądek'],['g_nadwaga','Kontrola wagi'],['g_aktywne','Dla aktywnych'],['g_zabieg','Po zabiegach']]],
  ['Czas',[['quick','Do 30 minut']]],
  ['Główne źródło białka',[['i_kurczak','Kurczak'],['i_indyk','Indyk'],['i_wolowina','Wołowina'],['i_ryba','Ryba'],['i_jajko','Jajko']]],
@@ -2065,7 +2066,7 @@ async function rateRecipe(id,n){
   if(!state.user){toast('Zaloguj się, aby ocenić');return;}
   try{const {error}=await sb.from('ratings').upsert({recipe_id:id,user_id:state.user.id,stars:n},{onConflict:'recipe_id,user_id'});if(error){toast('Błąd: '+error.message);return;}}catch(e){toast('Błąd: '+(e.message||e));return;}
   state.myRatings=state.myRatings||{};state.myRatings[id]=n;
-  try{const {data}=await sb.from('recipes').select('rating_avg').eq('id',id).single();const r=findRecipe(id);if(r&&data&&data.rating_avg!=null)r.rating=Math.round(data.rating_avg*10)/10;}catch(e){}
+  try{const {data}=await sb.from('recipes').select('rating_avg,rating_count').eq('id',id).single();const r=findRecipe(id);if(r&&data){if(data.rating_avg!=null)r.rating=Math.round(data.rating_avg*10)/10;if(data.rating_count!=null)r.ratingCount=data.rating_count;}}catch(e){}
   openRecipe(id);toast('Dziękujemy za ocenę!');
 }
 
