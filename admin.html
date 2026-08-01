@@ -100,6 +100,16 @@ td .row{display:flex;gap:6px;flex-wrap:wrap}
 .chips{display:flex;flex-wrap:wrap;gap:7px}
 .achip{background:#f4f0e6;border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:12.5px;cursor:pointer;color:var(--ink);transition:background .12s,color .12s}
 .achip.active{background:var(--green);color:var(--ivory);border-color:var(--green)}
+.kpi{transition:transform .14s ease,box-shadow .14s ease}
+.kpi:hover{transform:translateY(-2px);box-shadow:0 16px 32px -20px rgba(40,50,45,.4)}
+.panel{box-shadow:0 12px 30px -24px rgba(40,50,45,.28)}
+.panel-h .tools{flex-wrap:wrap}
+table tbody tr{transition:background .12s}
+table tbody tr:hover{background:#faf7ee}
+.kpi .val{font-size:32px}
+.btn.sm{border-radius:9px}
+input[type=checkbox]{width:17px;height:17px;accent-color:var(--gold2);cursor:pointer;flex:0 0 auto}
+.nav a{transition:background .14s,color .14s}
 </style>
 </head>
 <body>
@@ -155,7 +165,7 @@ const sb=window.supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,a
 const STAFF=['admin','moderator','dietitian'];
 const $=id=>document.getElementById(id);
 let me=null, db={users:[],recipes:[],comments:[],tags:[],counts:{}}, uMap={}, rMap={}, view='dash';
-let recFilter='all', recQ='', userQ='';
+let recFilter='all', recQ='', recSort='new', userQ='', modSel=new Set();
 
 function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2200);}
 function esc(s){return (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
@@ -224,7 +234,7 @@ const TITLES={dash:['Pulpit','Przegląd najważniejszych liczb'],mod:['Moderacja
 function render(){
   $('vtitle').textContent=TITLES[view][0];$('vsub').textContent=TITLES[view][1];
   if(view==='dash')return renderDash();
-  if(view==='mod')return renderRecipeTable(db.recipes.filter(r=>r.status==='pending'),true);
+  if(view==='mod')return renderMod();
   if(view==='recipes')return renderRecipes();
   if(view==='import')return renderImport();
   if(view==='users')return renderUsers();
@@ -286,10 +296,14 @@ function renderRecipes(){
   let list=db.recipes.slice();
   if(recFilter!=='all')list=list.filter(r=>r.status===recFilter);
   if(recQ)list=list.filter(r=>(r.title||'').toLowerCase().includes(recQ.toLowerCase()));
+  list.sort((a,b)=>recSort==='rating'?((b.rating_avg||0)-(a.rating_avg||0)):recSort==='az'?((a.title||'').localeCompare(b.title||'','pl')):recSort==='feat'?((b.featured?1:0)-(a.featured?1:0)||(new Date(b.created_at)-new Date(a.created_at))):(new Date(b.created_at)-new Date(a.created_at)));
   const opt=(v,l)=>`<option value="${v}" ${recFilter===v?'selected':''}>${l}</option>`;
+  const sopt=(v,l)=>`<option value="${v}" ${recSort===v?'selected':''}>${l}</option>`;
   let html=`<div class="panel"><div class="panel-h"><h3>Przepisy (${list.length})</h3><div class="tools">
     <input placeholder="Szukaj po nazwie…" value="${esc(recQ)}" oninput="recQ=this.value;renderInto()">
     <select onchange="recFilter=this.value;renderInto()">${opt('all','Wszystkie')}${opt('approved','Opublikowane')}${opt('pending','Oczekujące')}${opt('rejected','Odrzucone')}${opt('draft','Szkice')}</select>
+    <select onchange="recSort=this.value;renderInto()">${sopt('new','Najnowsze')}${sopt('rating','Najwyżej oceniane')}${sopt('az','Alfabetycznie')}${sopt('feat','Wyróżnione')}</select>
+    <button class="btn ghost sm" onclick="exportRecipes()">⬇ CSV</button>
     <button class="btn gold sm" onclick="openEditor(null)">+ Nowy przepis</button>
   </div></div>`;
   html+=renderRecipeRows(list);
@@ -300,6 +314,26 @@ function renderRecipeTable(list,isMod){
   let html=`<div class="panel"><div class="panel-h"><h3>${isMod?'Do moderacji':'Przepisy'} (${list.length})</h3></div>`+renderRecipeRows(list)+'</div>';
   $('view').innerHTML=html;
 }
+function renderMod(){
+  const list=db.recipes.filter(r=>r.status==='pending');
+  modSel=new Set();
+  let html=`<div class="panel"><div class="panel-h"><h3>Do moderacji (${list.length})</h3>`;
+  if(list.length)html+=`<div class="tools"><button id="modSelBtn" class="btn sm gold" disabled style="opacity:.5" onclick="approveSelected()">Zatwierdź zaznaczone (0)</button><button class="btn sm" onclick="approveAllPending()">Zatwierdź wszystkie</button></div>`;
+  html+=`</div>`;
+  if(!list.length){html+='<div class="empty">Brak przepisów oczekujących na akceptację.</div></div>';$('view').innerHTML=html;return;}
+  html+='<table><thead><tr><th style="width:36px"><input type="checkbox" onclick="toggleAllMod(this)" aria-label="Zaznacz wszystkie"></th><th>Przepis</th><th>Autor</th><th>Dodano</th><th></th></tr></thead><tbody>'+list.map(r=>`<tr><td><input type="checkbox" data-id="${r.id}" onclick="toggleModSel('${r.id}',this)"></td><td><b>${esc(r.title)}</b></td><td class="muted-cell">${esc(uMap[r.author_id]||'—')}</td><td class="muted-cell">${fmtD(r.created_at)}</td><td><div class="row"><button class="btn sm gold" onclick="openEditor('${r.id}')">Edytuj</button><button class="btn sm" onclick="approve('${r.id}')">Zatwierdź</button><button class="btn sm danger" onclick="reject('${r.id}')">Odrzuć</button></div></td></tr>`).join('')+'</tbody></table></div>';
+  $('view').innerHTML=html;
+}
+function updateModBtn(){const n=modSel.size;const b=$('modSelBtn');if(b){b.textContent='Zatwierdź zaznaczone ('+n+')';b.disabled=n===0;b.style.opacity=n?'1':'.5';}}
+function toggleModSel(id,el){if(el.checked)modSel.add(id);else modSel.delete(id);updateModBtn();}
+function toggleAllMod(el){document.querySelectorAll('#view tbody input[type=checkbox][data-id]').forEach(cb=>{cb.checked=el.checked;if(el.checked)modSel.add(cb.dataset.id);else modSel.delete(cb.dataset.id);});updateModBtn();}
+async function bulkApprove(ids){if(!ids.length)return;toast('Zatwierdzam '+ids.length+'…');let ok=0,fail=0;for(const id of ids){const {error}=await sb.rpc('review_recipe',{p_recipe:id,p_approve:true});if(error)fail++;else ok++;}toast('Zatwierdzono '+ok+(fail?(' · nie udało się: '+fail):''));await refreshAll();}
+async function approveSelected(){const ids=[...modSel];if(!ids.length){toast('Zaznacz przepisy');return;}if(!confirm('Zatwierdzić '+ids.length+' zaznaczonych przepisów?'))return;await bulkApprove(ids);}
+async function approveAllPending(){const ids=db.recipes.filter(r=>r.status==='pending').map(r=>r.id);if(!ids.length)return;if(!confirm('Zatwierdzić wszystkie '+ids.length+' oczekujących przepisów?'))return;await bulkApprove(ids);}
+function _csvCell(v){v=(v==null?'':String(v));return /[",\n;]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}
+function _dl(name,text){const b=new Blob(['\ufeff'+text],{type:'text/csv;charset=utf-8'});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1500);}
+function exportRecipes(){const rows=[['Tytuł','Status','Ocena','Liczba ocen','Autor','Wyróżniony','Dodano']].concat(db.recipes.map(r=>[r.title,statusName(r.status),r.rating_avg||'',r.rating_count||0,uMap[r.author_id]||'',r.featured?'tak':'nie',fmtD(r.created_at)]));_dl('przepisy.csv',rows.map(r=>r.map(_csvCell).join(';')).join('\r\n'));toast('Wyeksportowano przepisy (CSV)');}
+function exportUsers(){const src=(db.authUsers&&db.authUsers.length)?db.authUsers:db.users;const rows=[['Nazwa','E-mail','Rola','Premium','Zablokowany','Utworzono']].concat(src.map(u=>[u.display_name||'',u.email||'',u.role||'',u.is_premium?'tak':'nie',u.blocked?'tak':'nie',fmtD(u.created_at)]));_dl('uzytkownicy.csv',rows.map(r=>r.map(_csvCell).join(';')).join('\r\n'));toast('Wyeksportowano użytkowników (CSV)');}
 function renderRecipeRows(list){
   if(!list.length)return '<div class="empty">Brak przepisów.</div>';
   return '<table><thead><tr><th>Przepis</th><th>Autor</th><th>Status</th><th>Ocena</th><th>Dodano</th><th></th></tr></thead><tbody>'+list.map(r=>{
@@ -337,7 +371,7 @@ function renderUsers(){
     <button class="btn gold" onclick="createUserForm()">Utwórz konto</button>
   </div>
   <div id="nu_result" style="padding:0 18px 14px"></div></div>`;
-  html+=`<div class="panel"><div class="panel-h"><h3>Użytkownicy (${list.length}) · <span style="color:#2f8a4e">● ${onlineN} online</span></h3><div class="tools"><input placeholder="Szukaj po nazwie lub e-mailu…" value="${esc(userQ)}" oninput="userQ=this.value;renderInto()"></div></div>`;
+  html+=`<div class="panel"><div class="panel-h"><h3>Użytkownicy (${list.length}) · <span style="color:#2f8a4e">● ${onlineN} online</span></h3><div class="tools"><input placeholder="Szukaj po nazwie lub e-mailu…" value="${esc(userQ)}" oninput="userQ=this.value;renderInto()"><button class="btn ghost sm" onclick="exportUsers()">⬇ CSV</button></div></div>`;
   html+='<table><thead><tr><th>Użytkownik</th><th>Rola</th><th>Premium</th><th>Aktywność</th><th>Dostęp</th></tr></thead><tbody>'+list.map(u=>{
     const sameMe=u.id===me.id;
     const online=u.last_seen&&(Date.now()-new Date(u.last_seen).getTime()<3e5);
