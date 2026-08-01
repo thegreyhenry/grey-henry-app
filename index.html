@@ -666,6 +666,21 @@ body.t-light .segchip.active{background:var(--green);border-color:var(--green);c
 .thpin{margin-left:auto;flex:0 0 auto;align-self:center;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);background:rgba(191,177,120,.14);padding:3px 9px;border-radius:999px}
 .threadrow:hover{border-color:rgba(191,177,120,.4)}
 .comm-post .linkdel{margin-left:auto}
+.formsec{margin:20px 0 10px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);font-weight:600;border-top:1px solid var(--line);padding-top:16px}
+.formsec:first-of-type{border-top:none;padding-top:2px;margin-top:6px}
+.field .hint{display:block;font-size:12px;color:#8a968f;margin-top:7px;line-height:1.5}
+body.t-light .field .hint{color:#7a857c}
+.photopick{display:flex;align-items:center;gap:16px;margin-bottom:16px}
+.photo-av{width:76px;height:76px;border-radius:50%;flex:0 0 auto;background:rgba(244,238,225,.08);border:2px dashed rgba(191,177,120,.5);background-size:cover;background-position:center;display:grid;place-items:center;cursor:pointer;color:var(--gold);transition:border-color .15s}
+.photo-av:hover{border-color:var(--gold)}
+.photo-av svg{width:26px;height:26px;opacity:.85}
+.photo-cap b{display:block;font-size:14px}
+.photo-cap .hint{margin-top:3px}
+body.t-light .photo-av{background:#fff;border-color:rgba(42,52,49,.28);color:var(--gold2)}
+.inputunit{position:relative}
+.inputunit input{padding-right:46px}
+.inputunit .unit{position:absolute;right:15px;top:50%;transform:translateY(-50%);font-size:13px;color:#9aa69d;pointer-events:none;font-weight:600}
+body.t-light .inputunit .unit{color:#7a857c}
 </style>
 </head>
 <body class="t-light">
@@ -1526,26 +1541,36 @@ function dogFormHTML(d,editing){
   d=d||{};
   const acts=['Niska aktywność','Umiarkowana aktywność','Wysoka aktywność'];
   const goals=['Utrzymanie wagi','Redukcja wagi','Pies aktywny','Wsparcie seniora'];
-  const opt=(arr,v)=>arr.map(o=>`<option ${o===v?'selected':''}>${o}</option>`).join('');
   const at=v=>v?String(v).replace(/"/g,'&quot;'):'';
   const tx=v=>v?String(v).replace(/</g,'&lt;'):'';
+  const wnum=(String(d.weight||'').match(/[\d.,]+/)||[''])[0];
+  const anum=(String(d.age||'').match(/\d+/)||[''])[0];
   return `<div style="background:rgba(244,238,225,.05);border:1px solid var(--line);border-radius:20px;padding:18px;margin-bottom:14px">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><b class="serif" style="font-size:17px;font-weight:500">${editing?'Edytuj profil psa':'Nowy profil psa'}</b>${editing?`<button class="linkdel" onclick="deleteDog(${state.editingDog})">${ico('x')} Usuń psa</button>`:''}</div>
-    <div class="field"><label>Zdjęcie psa</label><input type="file" id="d_photo" accept="image/*" style="display:none" onchange="onDogPhotoPick(event)"><button class="outbtn" type="button" onclick="document.getElementById('d_photo').click()">${ico('image')} ${(pendingDogPhoto||d.photo)?'Zmień zdjęcie':'Wybierz zdjęcie'}</button><div id="d_photo_prev">${pendingDogPhoto?'<p class="muted" style="font-size:12px;margin-top:8px">Zdjęcie wybrane ✓ — zostanie zoptymalizowane.</p>':(d.photo?`<img src="${d.photo}" alt="" style="width:84px;height:84px;object-fit:cover;border-radius:50%;margin-top:8px" loading="lazy" decoding="async">`:'')}</div></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><b class="serif" style="font-size:17px;font-weight:500">${editing?'Edytuj profil psa':'Nowy profil psa'}</b>${editing?`<button class="linkdel" onclick="deleteDog(${state.editingDog})">${ico('x')} Usuń psa</button>`:''}</div>
+
+    <div class="formsec">Podstawy</div>
+    <input type="file" id="d_photo" accept="image/*" style="display:none" onchange="onDogPhotoPick(event)">
+    <div class="photopick"><div class="photo-av" id="d_photo_av" onclick="document.getElementById('d_photo').click()" ${d.photo?`style="background-image:url('${d.photo}')"`:''}>${d.photo?'':ico('image')}</div><div class="photo-cap"><b>Zdjęcie psa</b><span class="hint">Dotknij kółka, aby ${d.photo?'zmienić':'dodać'} zdjęcie</span></div></div>
     <div class="field"><label>Imię psa</label><input id="d_name" value="${at(d.name)}" placeholder="np. Henry"></div>
-    <div class="row2"><div class="field"><label>Rasa lub typ</label><input id="d_breed" value="${at(d.breed)}" placeholder="np. Chart"></div><div class="field"><label>Wiek</label><input id="d_age" value="${at(d.age)}" placeholder="np. 3 lata"></div></div>
-    <div class="field"><label>Waga</label><input id="d_weight" value="${at(d.weight)}" placeholder="np. 20 kg"></div>
+    <div class="row2"><div class="field"><label>Rasa lub typ</label><input id="d_breed" value="${at(d.breed)}" placeholder="np. Chart"></div><div class="field"><label>Wiek</label><div class="inputunit"><input id="d_age" value="${anum}" inputmode="numeric" placeholder="np. 3"><span class="unit">lat</span></div></div></div>
+    <div class="field"><label>Waga</label><div class="inputunit"><input id="d_weight" value="${wnum}" inputmode="decimal" placeholder="np. 20"><span class="unit">kg</span></div></div>
+
+    <div class="formsec">Żywienie</div>
     <div class="field"><label>Poziom aktywności</label><div class="segchips" id="d_act">${acts.map(o=>`<button type="button" class="segchip ${(d.activity||acts[0])===o?'active':''}" data-v="${at(o)}" onclick="pickSeg(this)">${o.replace(' aktywność','')}</button>`).join('')}</div></div>
-    <div class="field"><label>Cel żywieniowy</label><div class="segchips" id="d_goal">${goals.map(o=>`<button type="button" class="segchip ${(d.goal||goals[0])===o?'active':''}" data-v="${at(o)}" onclick="pickSeg(this)">${o}</button>`).join('')}</div></div>
+    <div class="field"><label>Cel żywieniowy</label><div class="segchips" id="d_goal">${goals.map(o=>`<button type="button" class="segchip ${(d.goal||goals[0])===o?'active':''}" data-v="${at(o)}" onclick="pickSeg(this)">${o}</button>`).join('')}</div><span class="hint">Dopasujemy do tego celu sugerowane przepisy i wielkość porcji.</span></div>
     <div class="field"><label>Składniki do wykluczenia (alergie / nietolerancje)</label>
     <div class="chips" id="dogExcl">${EXCL.map(([k,l])=>{const cur=[].concat(d.allergens||[],d.forbidden||[]).map(s=>String(s).toLowerCase());const on=cur.includes(k)||cur.some(v=>exclTerms(k).some(t=>t&&(v.includes(t)||t.includes(v))));return `<button type="button" class="chip achip ${on?'active':''}" data-x="${k}" onclick="this.classList.toggle('active')">${l}</button>`;}).join('')}</div>
-    <p class="muted" style="font-size:12px;margin-top:8px">Zaznacz, czego pies nie może jeść — ukryjemy przepisy z tymi składnikami.</p></div>
+    <span class="hint">Zaznacz, czego pies nie może jeść — ukryjemy przepisy z tymi składnikami.</span></div>
     <div class="field"><label>Preferencje żywieniowe</label><input id="d_pref" value="${at(d.preferences)}" placeholder="np. lubi mięso, posiłki gotowane"></div>
-    <div class="field"><label>Choroby / ograniczenia żywieniowe</label><input id="d_cond" value="${at(d.conditions&&d.conditions!=='Brak'?d.conditions:'')}" placeholder="np. wrażliwa trzustka"></div>
-    <div class="field"><label>O psie — charakter, co lubi</label><textarea id="d_note" placeholder="np. Energiczny, uwielbia aportować">${tx(d.note)}</textarea></div>
+    <div class="field"><label>Choroby / ograniczenia żywieniowe</label><input id="d_cond" value="${at(d.conditions&&d.conditions!=='Brak'?d.conditions:'')}" placeholder="np. wrażliwa trzustka"><span class="hint">Jeśli podasz, oznaczymy przepisy wymagające ostrożności.</span></div>
+
+    <div class="formsec">O psie</div>
+    <div class="field"><label>Charakter, co lubi</label><textarea id="d_note" placeholder="np. Energiczny, uwielbia aportować">${tx(d.note)}</textarea></div>
+
     <button class="btn btn-gold" style="width:100%" onclick="saveDog()">${editing?'Zapisz zmiany':'Zapisz profil psa'}</button>
   </div>`;
 }
+
 function openDogForm(i){
   const f=$('dogForm');const editing=(typeof i==='number');
   pendingDogPhoto=null;
@@ -1560,7 +1585,7 @@ async function saveDog(){
   if(!state.user){toast('Zaloguj się, aby zapisać profil psa');return;}
   const g=id=>($(id)?$(id).value.trim():'');
   const split=v=>v?v.split(',').map(s=>s.trim()).filter(Boolean):[];
-  const row={owner_id:state.user.id,name:g('d_name')||'Nowy pies',breed:g('d_breed')||null,age_text:g('d_age')||null,weight_kg:parseFloat((g('d_weight')||'').replace(',','.'))||null,activity:(document.querySelector('#d_act .segchip.active')||{dataset:{}}).dataset.v||'Umiarkowana aktywność',goal:(document.querySelector('#d_goal .segchip.active')||{dataset:{}}).dataset.v||'Utrzymanie wagi',allergens:[...document.querySelectorAll('#dogExcl .achip.active')].map(b=>b.dataset.x),forbidden:[],preferences:g('d_pref')||null,conditions:g('d_cond')||null,note:g('d_note')||null};
+  const row={owner_id:state.user.id,name:g('d_name')||'Nowy pies',breed:g('d_breed')||null,age_text:(g('d_age')?(g('d_age').trim()+' lat'):null),weight_kg:parseFloat((g('d_weight')||'').replace(',','.'))||null,activity:(document.querySelector('#d_act .segchip.active')||{dataset:{}}).dataset.v||'Umiarkowana aktywność',goal:(document.querySelector('#d_goal .segchip.active')||{dataset:{}}).dataset.v||'Utrzymanie wagi',allergens:[...document.querySelectorAll('#dogExcl .achip.active')].map(b=>b.dataset.x),forbidden:[],preferences:g('d_pref')||null,conditions:g('d_cond')||null,note:g('d_note')||null};
   try{
     const cur=(state.editingDog!=null)?state.dogs[state.editingDog]:null;
     let dogId=cur&&cur.id;
@@ -1641,8 +1666,8 @@ function onPhotoPick(e){
 function onDogPhotoPick(e){
   const f=e.target.files&&e.target.files[0];if(!f)return;
   pendingDogPhoto=f;
-  const prev=$('d_photo_prev');
-  if(prev){const url=URL.createObjectURL(f);prev.innerHTML=`<img src="${url}" alt="" style="width:84px;height:84px;object-fit:cover;border-radius:50%;margin-top:8px" loading="lazy" decoding="async"><p class="muted" style="font-size:12px;margin-top:6px">Zostanie zoptymalizowane przed wysłaniem.</p>`;}
+  const av=$('d_photo_av');
+  if(av){const url=URL.createObjectURL(f);av.style.backgroundImage=`url('${url}')`;av.innerHTML='';}
 }
 function goCat(c){state.tab='recipes';state.cat=c;state.q='';render();}
 function goSearch(){state.tab='recipes';render();const s=$('search');if(s)s.focus();}
