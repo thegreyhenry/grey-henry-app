@@ -731,6 +731,13 @@ body.t-light .steprow .sn{background:var(--green);color:#fff}
 .pushgate-box h3{font-family:var(--serif);font-size:22px;font-weight:500;margin-bottom:8px;color:#23302B}
 .pushgate-box p{font-size:14px;color:#5a635b;line-height:1.6;margin-bottom:20px}
 .pushgate-box .pg-later{background:none;border:none;color:#8a9189;font-family:var(--sans);font-size:13px;margin-top:12px;cursor:pointer;padding:6px}
+.notif-dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin:0 4px;vertical-align:middle}
+.notif-dot.granted{background:#3a9d5d;box-shadow:0 0 0 3px rgba(58,157,93,.18)}
+.notif-dot.default{background:#b9a94e}
+.notif-dot.denied{background:#c0563e}
+#regConsentRow a{color:var(--gold);font-weight:500;text-decoration:underline;text-underline-offset:2px;text-decoration-thickness:1px;text-decoration-color:rgba(191,177,120,.55)}
+#regConsentRow a:hover{text-decoration-color:var(--gold)}
+body.t-light #regConsentRow a{color:var(--gold2);text-decoration-color:rgba(143,127,72,.5)}
 </style>
 </head>
 <body class="t-light">
@@ -952,6 +959,13 @@ function startPresence(){
   if(!state._presenceVis){state._presenceVis=true;document.addEventListener('visibilitychange',()=>{if(!document.hidden)ping();});}
 }
 function retryLoad(){$('fatal').classList.remove('show');afterLogin();}
+async function notifSettings(){
+  if(!('Notification' in window)){toast('Powiadomienia nieobsługiwane na tym urządzeniu');return;}
+  if(Notification.permission==='granted'){toast('Powiadomienia są już włączone ✓');return;}
+  if(Notification.permission==='denied'){alert('Powiadomienia są zablokowane w ustawieniach przeglądarki.\n\nAby je włączyć: dotknij kłódki/ikony obok adresu strony → Powiadomienia → Zezwól, a potem odśwież aplikację.');return;}
+  await enablePush();
+  render();
+}
 function maybePromptPush(){
   try{
     if(!state.user)return;
@@ -1648,6 +1662,8 @@ async function addWeight(){
 }
 function renderProfile(){
   const favs=RECIPES.filter(r=>state.favs.has(r.id));
+  const notifSupported=('Notification' in window)&&('serviceWorker' in navigator)&&('PushManager' in window);
+  const notifPerm=notifSupported?Notification.permission:'unsupported';
   return `
   <div class="profhead"><div class="pf-ava">${(((state.profile&&state.profile.display_name)||(state.user&&state.user.email)||'H').trim().charAt(0)||'H').toUpperCase()}</div><h2>${(state.profile&&state.profile.display_name)?escH(state.profile.display_name):'Twój profil'}</h2><p>The Grey Henry Society Member${isStaff()?' · '+(({admin:'Administrator',moderator:'Moderator',dietitian:'Dietetyk'})[state.profile.role]||''):''}</p>${(state.user&&state.user.email)?`<div class="pf-email">${escH(state.user.email)}</div>`:''}${state.user?`<button class="outbtn pf-edit" onclick="go('account')">${ico('edit')} Edytuj profil</button>`:''}</div>
   <div class="pad" style="padding-top:22px">
@@ -1688,6 +1704,7 @@ function renderProfile(){
     <div class="section-h"><h2 style="font-size:18px">Ustawienia</h2></div>
     <div style="padding-bottom:30px">
       ${state.user?`<div class="menu-item" onclick="allergyMode()"><span class="ic">${ico('flag')}</span><span class="lbl">Tryb alergii</span><span class="ar">${ico('chev')}</span></div>`:''}
+      ${state.user&&notifSupported?`<div class="menu-item" onclick="notifSettings()"><span class="ic">${ico('bell')}</span><span class="lbl">Powiadomienia <span class="notif-dot ${notifPerm}"></span> ${notifPerm==='granted'?'włączone':(notifPerm==='denied'?'zablokowane':'wyłączone')}</span><span class="ar">${notifPerm==='granted'?'✓':'Włącz'}</span></div>`:''}
       <div class="menu-item" onclick="toggleTheme()"><span class="ic">${ico('theme')}</span><span class="lbl">Wygląd: ${currentTheme()==='dark'?'Ciemny (zielony)':'Jasny'}</span><span class="ar">Zmień</span></div>
       <div class="menu-item" onclick="toast('The Grey Henry Society — premium przepisy i suplementy dla psów, moderowane z troską.')"><span class="ic">${ico('info')}</span><span class="lbl">O Society</span><span class="ar">${ico('chev')}</span></div>
       ${state.user?`<div class="menu-item" onclick="go('account')"><span class="ic">${ico('flag')}</span><span class="lbl">Ustawienia konta</span><span class="ar">${ico('chev')}</span></div>`:''}

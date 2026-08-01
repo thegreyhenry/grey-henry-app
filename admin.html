@@ -120,6 +120,10 @@ input[type=checkbox]{width:17px;height:17px;accent-color:var(--gold2);cursor:poi
 .pushprev .pp-tx{min-width:0}
 .pushprev .pp-tx b{display:block;font-family:'Jost',sans-serif;font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pushprev .pp-tx span{display:block;font-size:12.5px;color:#c7cfc8;margin-top:2px;line-height:1.4;max-height:36px;overflow:hidden}
+.liverow{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);margin-bottom:14px}
+.liverow b{color:var(--ink);font-weight:600}
+.livedot{width:9px;height:9px;border-radius:50%;background:#3a9d5d;flex:0 0 auto;animation:livepulse 2s infinite}
+@keyframes livepulse{0%{box-shadow:0 0 0 0 rgba(58,157,93,.45)}70%{box-shadow:0 0 0 8px rgba(58,157,93,0)}100%{box-shadow:0 0 0 0 rgba(58,157,93,0)}}
 </style>
 </head>
 <body>
@@ -203,7 +207,8 @@ async function afterLogin(user){
   $('whorole').innerHTML='<span class="role '+me.role+'">'+me.role+'</span>';
   if(!isAdmin()){const ua=document.querySelector('#nav a[data-v="users"]');if(ua)ua.style.display='none';}
   await refreshAll();
-  if(!window._statsPoll){window._statsPoll=setInterval(async()=>{if(view==='dash'&&!document.hidden&&me){try{const {data}=await sb.rpc('admin_stats');if(data){db.stats=data;if(view==='dash')renderDash();}}catch(e){}}},45000);}
+  if(!window._statsPoll){window._statsPoll=setInterval(async()=>{if(view==='dash'&&!document.hidden&&me){try{const {data}=await sb.rpc('admin_stats');if(data){db.stats=data;if(view==='dash')renderDash();}}catch(e){}}},20000);}
+  if(!window._statsFocus){window._statsFocus=true;window.addEventListener('focus',async()=>{if(view==='dash'&&me){try{const {data}=await sb.rpc('admin_stats');if(data){db.stats=data;renderDash();}}catch(e){}}});}
 }
 async function doLogout(){await sb.auth.signOut();location.reload();}
 
@@ -272,7 +277,7 @@ function bar(data){
 function renderDash(){
   const c=db.counts,s=c.byStatus||{},st=db.stats||{};
   const kpi=(lab,val,hint)=>`<div class="kpi"><div class="lab">${lab}</div><div class="val">${val}</div><div class="hint">${hint||''}</div></div>`;
-  let html=`<div class="grid kpis">
+  let html=`<div class="liverow"><span class="livedot"></span>Statystyki na żywo · zaktualizowano <b id="liveTime">${new Date().toLocaleTimeString('pl-PL')}</b></div><div class="grid kpis">
     ${kpi('Aktywni teraz',st.active_now||0,'ostatnie 5 min')}
     ${kpi('Aktywni dziś',st.active_today||0,'ostatnie 24 h')}
     ${kpi('Użytkownicy',c.users,(st.users_7d!=null?('+'+st.users_7d+' w 7 dni'):'zarejestrowane konta'))}
