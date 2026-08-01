@@ -698,6 +698,31 @@ body.t-light .wizdot.cur .n{background:var(--green);border-color:var(--green);co
 .wiznav .btn{flex:1;margin:0}
 .wizstep{animation:wizfade .25s ease}
 @keyframes wizfade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.wizhead{margin:4px 0 18px}
+.wizhead h3{font-family:var(--serif);font-size:24px;font-weight:500;line-height:1.15}
+.wizhead p{font-size:14.5px;color:#b9c2ba;margin-top:7px;line-height:1.6}
+body.t-light .wizhead h3{color:#23302B}
+body.t-light .wizhead p{color:#5a635b}
+.wizwrap .field label{font-size:15px}
+.ingrow{display:flex;gap:8px;margin-bottom:10px;align-items:center}
+.ingrow input,.ingrow select,.steprow textarea{background:rgba(244,238,225,.09);border:1.5px solid var(--line);border-radius:13px;padding:13px 13px;color:var(--ivory);font-family:var(--sans);font-size:15px;min-width:0;outline:none}
+.ingrow input:focus,.ingrow select:focus,.steprow textarea:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(191,177,120,.2)}
+.ingrow .ing-n{flex:2.4}
+.ingrow .ing-a{flex:1;min-width:64px}
+.ingrow .ing-u{flex:0 0 96px;width:96px;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23BFB178' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 11px center;padding-right:30px}
+.rowdel{flex:0 0 34px;width:34px;height:34px;border-radius:50%;border:1.5px solid var(--line);background:transparent;color:#9aa69d;font-size:17px;cursor:pointer;transition:border-color .14s,color .14s}
+.rowdel:hover{border-color:#cf9075;color:#e2a98d}
+.addrow{width:100%;border:1.5px dashed rgba(191,177,120,.55);background:rgba(191,177,120,.05);color:var(--gold);padding:13px;border-radius:14px;cursor:pointer;font-family:var(--sans);font-size:14px;font-weight:500;margin:2px 0 6px;transition:background .15s,border-color .15s}
+.addrow:hover{background:rgba(191,177,120,.12);border-color:var(--gold)}
+.steprow{display:flex;gap:10px;margin-bottom:10px;align-items:flex-start}
+.steprow .sn{flex:0 0 30px;width:30px;height:30px;border-radius:50%;background:var(--gold);color:var(--forest);display:grid;place-items:center;font-family:var(--sans);font-size:13.5px;font-weight:600;margin-top:9px}
+.steprow textarea{flex:1;min-height:60px;resize:vertical;line-height:1.5}
+.steprow .rowdel{margin-top:9px}
+body.t-light .ingrow input,body.t-light .ingrow select,body.t-light .steprow textarea{background:#fff;color:#23302B;border-color:rgba(42,52,49,.22)}
+body.t-light .ingrow input:focus,body.t-light .ingrow select:focus,body.t-light .steprow textarea:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(42,52,49,.12)}
+body.t-light .rowdel{border-color:rgba(42,52,49,.22);color:#7a857c}
+body.t-light .addrow{background:#fff;border-color:rgba(143,127,72,.5);color:var(--gold2)}
+body.t-light .steprow .sn{background:var(--green);color:#fff}
 </style>
 </head>
 <body class="t-light">
@@ -1218,6 +1243,34 @@ function renderRecipes(){
   ${list.length>state.shown?`<div class="pad" style="padding-bottom:30px"><button class="morebtn" onclick="showMore()">Pokaż więcej (${list.length-state.shown}) ${ico('chev')}</button></div>`:'<div style="height:24px"></div>'}`;
 }
 
+const ING_UNITS=['g','kg','ml','l','szt.','łyżka','łyżeczka','szklanka','garść','—'];
+function ingRowHTML(n,a,u){
+  n=n||'';a=a||'';u=u||'g';
+  return `<div class="ingrow">
+    <input class="ing-n" placeholder="np. Pierś z indyka" value="${String(n).replace(/"/g,'&quot;')}" oninput="autoRow(this,'ing')">
+    <input class="ing-a" placeholder="250" inputmode="decimal" value="${String(a).replace(/"/g,'&quot;')}">
+    <select class="ing-u">${ING_UNITS.map(x=>`<option ${x===u?'selected':''}>${x}</option>`).join('')}</select>
+    <button type="button" class="rowdel" onclick="delRow(this,'ing')" aria-label="Usuń">×</button>
+  </div>`;
+}
+function stepRowHTML(t){
+  return `<div class="steprow"><span class="sn"></span><textarea placeholder="Opisz krok…" oninput="autoRow(this,'step')">${String(t||'').replace(/</g,'&lt;')}</textarea><button type="button" class="rowdel" onclick="delRow(this,'step')" aria-label="Usuń">×</button></div>`;
+}
+function addIngRow(){const c=document.getElementById('ingRows');if(!c)return;c.insertAdjacentHTML('beforeend',ingRowHTML('','','g'));}
+function addStepRow(){const c=document.getElementById('stepRows');if(!c)return;c.insertAdjacentHTML('beforeend',stepRowHTML(''));renumberSteps();}
+function renumberSteps(){document.querySelectorAll('#stepRows .steprow .sn').forEach((el,i)=>el.textContent=i+1);}
+function autoRow(el,kind){
+  const row=el.closest(kind==='ing'?'.ingrow':'.steprow');
+  const c=row&&row.parentNode; if(!c)return;
+  if(row===c.lastElementChild&&el.value.trim()){kind==='ing'?addIngRow():addStepRow();}
+}
+function delRow(btn,kind){
+  const row=btn.closest(kind==='ing'?'.ingrow':'.steprow');
+  const c=row&&row.parentNode; if(!c)return;
+  row.remove();
+  if(!c.children.length){kind==='ing'?addIngRow():addStepRow();}
+  if(kind==='step')renumberSteps();
+}
 let wizStep=1;
 function renderAddRecipe(){
   if(!state.user){return `
@@ -1253,7 +1306,7 @@ function renderAddRecipe(){
     </div>
 
     <div class="wizstep" data-step="1">
-      <p class="muted" style="margin-bottom:16px">Zacznijmy od podstaw. Pola oznaczone * są wymagane.</p>
+      <div class="wizhead"><h3>Podstawy</h3><p>Nazwa, zdjęcie i najważniejsze informacje. Pola z * są wymagane.</p></div>
       <div class="field"><label>Nazwa przepisu *</label><input id="r_name" placeholder="np. Domowa miska z indykiem"></div>
       <div class="field"><label>Zdjęcie dania</label><input type="file" id="r_photo" accept="image/*" style="display:none" onchange="onPhotoPick(event)"><button class="outbtn" type="button" onclick="document.getElementById('r_photo').click()">${ico('image')} ${pendingPhoto?'Zmień zdjęcie':'Wybierz zdjęcie'}</button><div id="r_photo_prev">${pendingPhoto?'<p class="muted" style="font-size:12px;margin-top:8px">Zdjęcie wybrane ✓ — zostanie zoptymalizowane.</p>':''}</div></div>
       <div class="field"><label>Krótki opis</label><textarea id="r_desc" placeholder="Dla kogo i czym wyróżnia się ten posiłek"></textarea></div>
@@ -1264,24 +1317,26 @@ function renderAddRecipe(){
     </div>
 
     <div class="wizstep" data-step="2" style="display:none">
-      <p class="muted" style="margin-bottom:16px">Wypisz składniki — każdy w nowej linii, w formacie <b>nazwa - ilość</b>.</p>
-      <div class="field"><label>Składniki i ilości</label><textarea id="r_ing" style="min-height:180px" placeholder="Pierś z indyka - 250 g&#10;Ryż - 80 g&#10;Marchew - 1 szt."></textarea><span class="hint">Przykład: „Pierś z indyka - 250 g". Ilość jest opcjonalna.</span></div>
+      <div class="wizhead"><h3>Składniki</h3><p>Każdy składnik osobno: nazwa, ilość i jednostka. Nowy wiersz pojawi się sam, gdy zaczniesz pisać.</p></div>
+      <div id="ingRows">${ingRowHTML('','','g')}${ingRowHTML('','','g')}</div>
+      <button type="button" class="addrow" onclick="addIngRow()">+ Dodaj składnik</button>
     </div>
 
     <div class="wizstep" data-step="3" style="display:none">
-      <p class="muted" style="margin-bottom:16px">Opisz przygotowanie — każdy krok w nowej linii.</p>
-      <div class="field"><label>Sposób przygotowania</label><textarea id="r_steps" style="min-height:200px" placeholder="Ugotuj indyka bez soli…&#10;Dodaj ugotowany ryż…&#10;Wystudź przed podaniem."></textarea><span class="hint">Każda linia to osobny krok wyświetlany w przepisie.</span></div>
+      <div class="wizhead"><h3>Przygotowanie</h3><p>Opisz kolejne kroki — każdy jako osobna, numerowana karta.</p></div>
+      <div id="stepRows">${stepRowHTML('')}${stepRowHTML('')}</div>
+      <button type="button" class="addrow" onclick="addStepRow()">+ Dodaj krok</button>
     </div>
 
     <div class="wizstep" data-step="4" style="display:none">
-      <p class="muted" style="margin-bottom:16px">Dobierz kategorie — to po nich psi rodzice odnajdą Twój przepis. Wymagany min. jeden <b>rodzaj posiłku</b> i jeden <b>główny składnik</b>.</p>
+      <div class="wizhead"><h3>Kategorie</h3><p>To po nich psi rodzice odnajdą Twój przepis. Wybierz min. jeden <b>rodzaj posiłku</b> i jeden <b>główny składnik</b>.</p></div>
       <div id="addtags">
       ${groups.map(g=>`<div class="field"><label>${g[0]}</label><div class="chips">${g[1].map(([k,l])=>`<button type="button" class="chip achip" data-k="${k}" onclick="this.classList.toggle('active')">${l}</button>`).join('')}</div></div>`).join('')}
       </div>
     </div>
 
     <div class="wizstep" data-step="5" style="display:none">
-      <p class="muted" style="margin-bottom:16px">Ostatni krok. Twój przepis trafi do moderatora i pojawi się publicznie dopiero po akceptacji.</p>
+      <div class="wizhead"><h3>Wysyłka</h3><p>Ostatni krok. Twój przepis trafi do moderatora i pojawi się publicznie po akceptacji.</p></div>
       <div class="checkrow" id="r_consent" onclick="this.classList.toggle('on')"><span class="box">${ico('check')}</span><span>Wyrażam zgodę na publikację przepisu po weryfikacji.</span></div>
     </div>
 
@@ -1295,10 +1350,14 @@ function renderAddRecipe(){
 function wizGo(n){
   const N=5; if(n<1||n>N)return;
   if(n>1&&wizStep===1){const nm=document.getElementById('r_name');if(nm&&!nm.value.trim()){toast('Podaj nazwę przepisu');return;}}
+  if(n>2&&wizStep===2){const ok=[...document.querySelectorAll('#ingRows .ing-n')].some(i=>i.value.trim());if(!ok){toast('Dodaj przynajmniej jeden składnik');return;}}
+  if(n>3&&wizStep===3){const ok=[...document.querySelectorAll('#stepRows textarea')].some(t=>t.value.trim());if(!ok){toast('Opisz przynajmniej jeden krok');return;}}
+  if(n>4&&wizStep===4){const ks=[...document.querySelectorAll('#addtags .achip.active')].map(b=>b.dataset.k);if(!ks.some(k=>k.indexOf('m_')===0)){toast('Wybierz rodzaj posiłku');return;}if(!ks.some(k=>k.indexOf('i_')===0)){toast('Wybierz główny składnik');return;}}
   wizStep=n;
   document.querySelectorAll('.wizstep').forEach(el=>{el.style.display=(+el.dataset.step===n)?'block':'none';});
   document.querySelectorAll('.wizdot').forEach(el=>{const s=+el.dataset.s;el.classList.toggle('done',s<n);el.classList.toggle('cur',s===n);});
   const bar=document.getElementById('wizbar'); if(bar)bar.style.width=((n-1)/(N-1)*100)+'%';
+  if(n===3)renumberSteps();
   const back=document.getElementById('wizBack'),next=document.getElementById('wizNext'),sub=document.getElementById('wizSubmit');
   if(back)back.style.visibility=n>1?'visible':'hidden';
   if(next)next.style.display=n<N?'inline-flex':'none';
@@ -1314,8 +1373,8 @@ async function saveRecipe(){
   if(!keys.some(k=>k.indexOf('m_')===0)){toast('Wybierz przynajmniej jeden rodzaj posiłku');return;}
   if(!keys.some(k=>k.indexOf('i_')===0)){toast('Wybierz główny składnik');return;}
   if(!$('r_consent').classList.contains('on')){toast('Zaznacz zgodę na publikację');return;}
-  const ing=v('r_ing').split('\n').map(l=>l.trim()).filter(Boolean).map(l=>{const p=l.split(/\s[-\u2013]\s/);return [p[0]||l,p[1]||''];});
-  const steps=v('r_steps').split('\n').map(s=>s.trim()).filter(Boolean);
+  const ing=[...document.querySelectorAll('#ingRows .ingrow')].map(r=>{const n=r.querySelector('.ing-n').value.trim();if(!n)return null;const a2=r.querySelector('.ing-a').value.trim();const u=r.querySelector('.ing-u').value;return [n,a2?(a2+(u&&u!=='—'?' '+u:'')):''];}).filter(Boolean);
+  const steps=[...document.querySelectorAll('#stepRows textarea')].map(t=>t.value.trim()).filter(Boolean);
   try{
     const {data:rec,error}=await sb.from('recipes').insert({author_id:state.user.id,title:v('r_name'),description:v('r_desc')||null,difficulty:v('r_diff')||'easy',time_min:parseInt(v('r_time'))||null,kcal:parseInt(v('r_kcal'))||null}).select().single();
     if(error){toast('Błąd: '+error.message);return;}
