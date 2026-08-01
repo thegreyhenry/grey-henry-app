@@ -723,6 +723,14 @@ body.t-light .ingrow input:focus,body.t-light .ingrow select:focus,body.t-light 
 body.t-light .rowdel{border-color:rgba(42,52,49,.22);color:#7a857c}
 body.t-light .addrow{background:#fff;border-color:rgba(143,127,72,.5);color:var(--gold2)}
 body.t-light .steprow .sn{background:var(--green);color:#fff}
+.pushgate{position:fixed;inset:0;z-index:200;background:rgba(20,26,23,.72);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:24px;animation:pgfade .2s ease}
+@keyframes pgfade{from{opacity:0}to{opacity:1}}
+.pushgate-box{background:var(--ivory);color:var(--ink);border-radius:24px;max-width:340px;width:100%;padding:28px 24px 20px;text-align:center;box-shadow:0 30px 80px -20px rgba(0,0,0,.6);animation:pgrise .28s cubic-bezier(.2,.8,.2,1)}
+@keyframes pgrise{from{opacity:0;transform:translateY(16px) scale(.97)}to{opacity:1;transform:none}}
+.pushgate-box .pg-crest{height:62px;margin-bottom:12px}
+.pushgate-box h3{font-family:var(--serif);font-size:22px;font-weight:500;margin-bottom:8px;color:#23302B}
+.pushgate-box p{font-size:14px;color:#5a635b;line-height:1.6;margin-bottom:20px}
+.pushgate-box .pg-later{background:none;border:none;color:#8a9189;font-family:var(--sans);font-size:13px;margin-top:12px;cursor:pointer;padding:6px}
 </style>
 </head>
 <body class="t-light">
@@ -933,7 +941,7 @@ async function afterLogin(){
   setBusy(true);
   try{await loadData();$('fatal').classList.remove('show');}
   catch(e){setBusy(false);$('fatal').classList.add('show');return;}
-  setBusy(false);$('login').classList.remove('show');render();startPresence();
+  setBusy(false);$('login').classList.remove('show');render();startPresence();maybePromptPush();
 }
 function startPresence(){
   if(!state.user)return;
@@ -944,6 +952,37 @@ function startPresence(){
   if(!state._presenceVis){state._presenceVis=true;document.addEventListener('visibilitychange',()=>{if(!document.hidden)ping();});}
 }
 function retryLoad(){$('fatal').classList.remove('show');afterLogin();}
+function maybePromptPush(){
+  try{
+    if(!state.user)return;
+    if(!('Notification' in window)||!('serviceWorker' in navigator)||!('PushManager' in window))return;
+    if(Notification.permission!=='default')return;
+    if(sessionStorage.getItem('gh-push-nudge')==='1')return;
+    setTimeout(showPushGate,1200);
+  }catch(e){}
+}
+function showPushGate(){
+  if(document.getElementById('pushGate'))return;
+  if(!state.user||Notification.permission!=='default')return;
+  const el=document.createElement('div');
+  el.id='pushGate';el.className='pushgate';
+  el.innerHTML=`<div class="pushgate-box">
+    <img src="${CREST}" class="pg-crest" alt="" loading="lazy" decoding="async">
+    <h3>Bądź na bieżąco</h3>
+    <p>Włącz powiadomienia, aby nie przegapić nowych przepisów, przepisu dnia i ogłoszeń od The Grey Henry Society.</p>
+    <button class="btn btn-gold" style="width:100%;margin:0" onclick="enablePushFromGate()">Włącz powiadomienia</button>
+    <button class="pg-later" onclick="closePushGate(true)">Może później</button>
+  </div>`;
+  document.body.appendChild(el);
+}
+function closePushGate(dismiss){
+  const el=document.getElementById('pushGate');if(el)el.remove();
+  if(dismiss){try{sessionStorage.setItem('gh-push-nudge','1');}catch(e){}}
+}
+async function enablePushFromGate(){
+  try{await enablePush();}catch(e){}
+  closePushGate(true);
+}
 async function start(){
   if(!sb){$('login').classList.add('show');return;}
   function updateOnline(){const b=$('offline');if(b)b.classList.toggle('show',!navigator.onLine);}
