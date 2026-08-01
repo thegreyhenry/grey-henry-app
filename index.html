@@ -1025,7 +1025,7 @@ async function afterLogin(){
   setBusy(true);
   try{await loadData();$('fatal').classList.remove('show');}
   catch(e){setBusy(false);$('fatal').classList.add('show');return;}
-  setBusy(false);$('login').classList.remove('show');render();startPresence();maybePromptPush();
+  setBusy(false);$('login').classList.remove('show');render();startPresence();openRecipeFromUrl();maybePromptPush();
 }
 function startPresence(){
   if(!state.user)return;
@@ -1992,7 +1992,9 @@ async function openRecipe(id){
   paintDetail(id);
   if($('detail'))$('detail').scrollTop=0; if($('detailScr'))$('detailScr').scrollTop=0;
   $('detail').classList.add('open');
-  if(!(history.state&&history.state.gh==='detail'))history.pushState({gh:'detail'},'');
+  const _rurl='?r='+id;
+  if(location.search===_rurl||(history.state&&history.state.gh==='detail')){try{history.replaceState({gh:'detail',r:id},'',_rurl);}catch(e){}}
+  else{try{history.pushState({gh:'detail',r:id},'',_rurl);}catch(e){}}
   if(!r.detail){await ensureRecipeDetail(id); if(_detailId===id)paintDetail(id);}
 }
 function paintDetail(id){
@@ -2037,7 +2039,8 @@ function paintDetail(id){
       <p class="disclaim">Wartości odżywcze i porcje są orientacyjne i nie zastępują konsultacji z lekarzem weterynarii ani dietetykiem zwierzęcym.</p>
     </div>`;
 }
-function hideDetail(){_detailId=null;$('detail').classList.remove('open');}
+function hideDetail(){_detailId=null;$('detail').classList.remove('open');try{if(location.search)history.replaceState(history.state,'',location.pathname);}catch(e){}}
+function openRecipeFromUrl(){try{const rid=new URLSearchParams(location.search).get('r');if(rid&&findRecipe(rid))openRecipe(rid);}catch(e){}}
 function closeRecipe(){if(history.state&&history.state.gh==='detail'){history.back();}else{hideDetail();}}
 window.addEventListener('popstate',()=>{if($('detail')&&$('detail').classList.contains('open'))hideDetail();});
 async function toggleFav(id){
