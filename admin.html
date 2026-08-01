@@ -209,6 +209,7 @@ async function afterLogin(user){
   await refreshAll();
   if(!window._statsPoll){window._statsPoll=setInterval(async()=>{if(view==='dash'&&!document.hidden&&me){try{const {data}=await sb.rpc('admin_stats');if(data){db.stats=data;if(view==='dash')renderDash();}}catch(e){}}},20000);}
   if(!window._statsFocus){window._statsFocus=true;window.addEventListener('focus',async()=>{if(view==='dash'&&me){try{const {data}=await sb.rpc('admin_stats');if(data){db.stats=data;renderDash();}}catch(e){}}});}
+  if(!window._presencePoll){const ping=()=>{if(me&&sb){try{sb.rpc('touch_seen');}catch(e){}}};ping();window._presencePoll=setInterval(ping,45000);window.addEventListener('focus',ping);document.addEventListener('visibilitychange',()=>{if(!document.hidden)ping();});}
 }
 async function doLogout(){await sb.auth.signOut();location.reload();}
 
