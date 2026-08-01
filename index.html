@@ -163,9 +163,6 @@ svg{display:block}
 .circ-btn svg{width:20px;height:20px}
 .dhead .back{left:18px}
 .dhead .fav{right:18px;color:var(--gold)}
-.dhead .share{right:66px;color:var(--gold)}
-.dhead .share svg{fill:none}
-@media (hover:hover){.dhead .share:hover{border-color:var(--gold);background:rgba(191,177,120,.15)}}
 .dhead .fav.on{background:var(--gold);color:var(--forest);border-color:var(--gold)}
 .dhead .fav.on svg{fill:currentColor}
 .dtitle{position:relative;z-index:2}
@@ -1028,7 +1025,7 @@ async function afterLogin(){
   setBusy(true);
   try{await loadData();$('fatal').classList.remove('show');}
   catch(e){setBusy(false);$('fatal').classList.add('show');return;}
-  setBusy(false);$('login').classList.remove('show');render();startPresence();openRecipeFromUrl();maybePromptPush();
+  setBusy(false);$('login').classList.remove('show');render();startPresence();maybePromptPush();
 }
 function startPresence(){
   if(!state.user)return;
@@ -1989,15 +1986,6 @@ async function ensureRecipeDetail(id){
   }catch(e){}
   r.detail=true;
 }
-function recipeLink(id){return location.origin+location.pathname+'?r='+id;}
-async function copyRecipeLink(id){
-  const url=recipeLink(id);
-  try{ await navigator.clipboard.writeText(url); toast('Skopiowano link do przepisu ✓'); return; }catch(e){}
-  try{ const ta=document.createElement('textarea');ta.value=url;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.focus();ta.select();const ok=document.execCommand('copy');ta.remove();toast(ok?'Skopiowano link ✓':('Skopiuj ręcznie: '+url)); }catch(e){ toast('Skopiuj ręcznie: '+url); }
-}
-function openRecipeFromUrl(){
-  try{ const rid=new URLSearchParams(location.search).get('r'); if(rid&&findRecipe(rid)) openRecipe(rid); }catch(e){}
-}
 async function openRecipe(id){
   const r=findRecipe(id); if(!r)return;
   _detailId=id;
@@ -2019,7 +2007,6 @@ function paintDetail(id){
       <img src="${r.wash==='gold'||r.wash==='parch'?MONOG:MONO}" alt="" style="position:absolute;top:64px;right:20px;width:104px;opacity:.13;z-index:1;pointer-events:none" loading="lazy" decoding="async">
       <div class="circ-btn back" onclick="closeRecipe()" aria-label="Wróć">${ico('arrow')}</div>
       <div class="circ-btn fav ${fav?'on':''}" id="favBtn" onclick="toggleFav('${id}')" aria-label="Ulubione">${ico('heart')}</div>
-      <div class="circ-btn share" onclick="copyRecipeLink('${id}')" aria-label="Kopiuj link do przepisu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></div>
       <div class="dtitle"><span class="badge ${bc}">${bt}</span><div class="eyebrow">${CATS.find(c=>c[0]===r.cat)?CATS.find(c=>c[0]===r.cat)[1]:'Przepis'}</div><h1>${r.name}</h1></div>
     </div>
     <div class="dbody">
