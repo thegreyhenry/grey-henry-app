@@ -110,6 +110,16 @@ table tbody tr:hover{background:#faf7ee}
 .btn.sm{border-radius:9px}
 input[type=checkbox]{width:17px;height:17px;accent-color:var(--gold2);cursor:pointer;flex:0 0 auto}
 .nav a{transition:background .14s,color .14s}
+.pushcheck{display:flex;gap:10px;align-items:flex-start;margin:16px 0 4px;font-size:13.5px;cursor:pointer;line-height:1.5}
+.pushcheck input{width:18px;height:18px;accent-color:var(--gold2);margin-top:1px;flex:0 0 auto}
+.pushprev-wrap{margin-top:18px}
+.pushprev-lbl{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold2);font-weight:600;margin-bottom:8px}
+.pushprev{display:flex;gap:12px;align-items:center;background:linear-gradient(150deg,#2A3431,#1C2420);color:#F4EEE1;border-radius:14px;padding:14px 16px;box-shadow:0 12px 28px -16px rgba(0,0,0,.55)}
+.pushprev .pp-ic{width:40px;height:40px;border-radius:10px;background:rgba(191,177,120,.16);display:grid;place-items:center;flex:0 0 auto;overflow:hidden}
+.pushprev .pp-ic img{width:28px;height:28px}
+.pushprev .pp-tx{min-width:0}
+.pushprev .pp-tx b{display:block;font-family:'Jost',sans-serif;font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pushprev .pp-tx span{display:block;font-size:12.5px;color:#c7cfc8;margin-top:2px;line-height:1.4;max-height:36px;overflow:hidden}
 </style>
 </head>
 <body>
@@ -715,22 +725,33 @@ function renderAnnounce(){
   $('view').innerHTML=html;
 }
 function renderPush(){
-  let html=`<div class="panel"><div class="panel-h"><h3>Powiadomienia push</h3></div>
-  <div style="padding:14px 18px">
-    <p id="pushAudience" class="muted-cell" style="margin:0 0 10px">Subskrybentów: …</p>
-    <label class="muted-cell" style="display:block;margin-bottom:4px">Tytuł</label>
-    <input id="pushTitle" maxlength="120" placeholder="np. Nowy przepis w Henry&#39;s Table!" style="margin-bottom:10px">
-    <label class="muted-cell" style="display:block;margin-bottom:4px">Treść</label>
-    <textarea id="pushBody" rows="3" maxlength="300" placeholder="Treść powiadomienia…"></textarea>
-    <label class="muted-cell" style="display:block;margin:10px 0 4px">Link po kliknięciu (opcjonalnie)</label>
-    <input id="pushUrl" placeholder="/" style="margin-bottom:10px">
-    <div style="margin-top:12px">
-      <button class="btn gold" type="button" onclick="sendBroadcastPush()">Wyślij do wszystkich</button>
+  let html=`<div class="panel"><div class="panel-h"><h3>Wyślij powiadomienie</h3></div>
+  <div style="padding:16px 18px;max-width:560px">
+    <p id="pushAudience" class="muted-cell" style="margin:0 0 4px">Subskrybentów: …</p>
+    <p class="muted-cell" style="margin:0 0 6px;font-size:12.5px;line-height:1.6">Push dociera do osób, które włączyły powiadomienia na urządzeniu. Aby dotrzeć do <b>wszystkich</b> użytkowników, zaznacz opcję „Pokaż też jako ogłoszenie" — pojawi się w aplikacji u każdego.</p>
+    <label style="display:block;margin:12px 0 5px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold2);font-weight:600">Tytuł</label>
+    <input id="pushTitle" maxlength="120" placeholder="np. Nowy przepis w Henry's Table!" oninput="updatePushPreview()">
+    <label style="display:block;margin:12px 0 5px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold2);font-weight:600">Treść</label>
+    <textarea id="pushBody" rows="3" maxlength="300" placeholder="Treść powiadomienia…" oninput="updatePushPreview()"></textarea>
+    <label style="display:block;margin:12px 0 5px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold2);font-weight:600">Link po kliknięciu (opcjonalnie)</label>
+    <input id="pushUrl" placeholder="/">
+    <label class="pushcheck"><input type="checkbox" id="pushAsAnn"> <span>Pokaż też jako ogłoszenie w aplikacji <b>— dotrze do wszystkich użytkowników</b></span></label>
+    <div class="pushprev-wrap"><div class="pushprev-lbl">Podgląd powiadomienia</div>
+      <div class="pushprev"><div class="pp-ic"><img src="logo/mono_gold.png" alt="" onerror="this.style.display='none'"></div><div class="pp-tx"><b id="ppTitle">Tytuł powiadomienia</b><span id="ppBody">Treść pojawi się tutaj…</span></div></div>
     </div>
-    <p id="pushStatus" style="margin-top:10px;opacity:.8"></p>
+    <div style="margin-top:16px"><button class="btn gold" type="button" onclick="sendBroadcastPush()">Wyślij do wszystkich</button></div>
+    <p id="pushStatus" style="margin-top:12px;opacity:.85"></p>
   </div></div>`;
   $('view').innerHTML=html;
   loadPushAudience();
+  updatePushPreview();
+}
+function updatePushPreview(){
+  const t=(document.getElementById('pushTitle')||{}).value||'';
+  const b=(document.getElementById('pushBody')||{}).value||'';
+  const pt=document.getElementById('ppTitle'),pb=document.getElementById('ppBody');
+  if(pt)pt.textContent=t||'Tytuł powiadomienia';
+  if(pb)pb.textContent=b||'Treść pojawi się tutaj…';
 }
 async function loadPushAudience(){
   try{
@@ -744,9 +765,22 @@ async function sendBroadcastPush(){
   const title=(document.getElementById('pushTitle').value||'').trim();
   const body=(document.getElementById('pushBody').value||'').trim();
   const url=(document.getElementById('pushUrl').value||'/').trim();
+  const alsoAnn=document.getElementById('pushAsAnn')&&document.getElementById('pushAsAnn').checked;
   const status=document.getElementById('pushStatus');
   if(!title && !body){ if(status) status.textContent='Wpisz tytuł lub treść.'; return; }
-  if(!confirm('Wysłać powiadomienie do wszystkich subskrybentów?')) return;
+  if(alsoAnn){
+    if(!title){ if(status) status.textContent='Aby dotrzeć do wszystkich (ogłoszenie), podaj tytuł.'; return; }
+    if(!confirm('Wysłać do WSZYSTKICH? Powiadomienie pojawi się w aplikacji u każdego użytkownika oraz jako push u osób z włączonymi powiadomieniami.')) return;
+    if(status) status.textContent='Wysyłanie do wszystkich…';
+    try{
+      const {error}=await sb.from('announcements').insert({title,body:body||title,created_by:me.id});
+      if(error) throw error;
+      if(status) status.textContent='Wysłano do wszystkich ✓ — widoczne w aplikacji u każdego, push u subskrybentów.';
+      document.getElementById('pushTitle').value='';document.getElementById('pushBody').value='';document.getElementById('pushAsAnn').checked=false;updatePushPreview();
+    }catch(e){ if(status) status.textContent='Błąd: '+(e.message||e); }
+    return;
+  }
+  if(!confirm('Wysłać powiadomienie push do wszystkich subskrybentów (osób z włączonymi powiadomieniami)?')) return;
   if(status) status.textContent='Wysyłanie…';
   try{
     const { data, error } = await sb.functions.invoke('send-push', { body:{ broadcast:true, title, body, url } });
