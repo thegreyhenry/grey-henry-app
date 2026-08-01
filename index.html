@@ -793,16 +793,20 @@ function mapDbRecipe(r,ings,steps,tagKeys,i){
 }
 async function loadData(){
   if(!sb)return;
-  const [{data:recs},{data:rtags},{data:favs},{data:anns}]=await Promise.all([
+  const [{data:recs},{data:rtags},{data:favs},{data:anns},{data:cols},{data:colrec},{data:cfg}]=await Promise.all([
     sb.from('recipes').select('*').eq('status','approved').order('rating_avg',{ascending:false}),
     sb.from('recipe_tags').select('recipe_id,tags(key)'),
     state.user?sb.from('favorites').select('recipe_id'):Promise.resolve({data:[]}),
-    state.user?sb.from('announcements').select('*').order('created_at',{ascending:false}).limit(20):Promise.resolve({data:[]})
+    state.user?sb.from('announcements').select('*').order('created_at',{ascending:false}).limit(20):Promise.resolve({data:[]}),
+    sb.from('collections').select('*').eq('active',true).order('sort_order'),
+    sb.from('collection_recipes').select('collection_id,recipe_id,position').order('position'),
+    sb.from('app_config').select('value').eq('key','recipe_of_day').maybeSingle()
   ]);
   state.announcements=(anns||[]).map(a=>({id:a.id,title:escH(a.title),body:escH(a.body),when:new Date(a.created_at).toLocaleDateString('pl-PL')}));
   const tgM={};
   (rtags||[]).forEach(rt=>{const k=rt.tags&&rt.tags.key;if(k)(tgM[rt.recipe_id]=tgM[rt.recipe_id]||[]).push(k);});
   RECIPES=(recs||[]).map((r,i)=>mapDbRecipe(r,null,null,tgM[r.id]||[],i));
+  state.collections=cols||[]; state.colRecipes=colrec||[]; state.recipeOfDay=(cfg&&cfg.value&&cfg.value.recipe_id)||null;
   state.favs=new Set((favs||[]).map(f=>f.recipe_id));
   try{
     const {data:cmts}=await sb.from('comments').select('recipe_id, body, created_at, profiles(display_name)').order('created_at');
@@ -1076,13 +1080,16 @@ function dogCardHTML(d,i){
 
 function renderHome(){
   const dog=state.dogs[0];
-  const featured=RECIPES.find(r=>r.featured)||RECIPES[0];
+  const rod=state.recipeOfDay?findRecipe(state.recipeOfDay):null;
+  const featured=rod||RECIPES.find(r=>r.featured)||RECIPES[0];
   if(!featured)return '<div class="pad muted" style="padding-top:60px;text-align:center">Brak przepisów do wyświetlenia.</div>';
   const diet=RECIPES.filter(r=>r.badge==='diet');
   const popular=RECIPES.filter(r=>r.badge==='comm');
   const matched=dog?RECIPES.filter(r=>recipeMatchesDog(r,dog)).slice(0,6):[];
   const favList=RECIPES.filter(r=>state.favs.has(r.id));
   const quick=[['m_sniadanie','Śniadania'],['m_obiad','Obiady'],['m_smaczek','Smaczki'],['a_szczeniak','Szczenięta'],['a_senior','Seniory'],['g_lekko','Lekkostrawne']];
+  const cols=(state.collections||[]).filter(c=>c.active).sort((a,b)=>a.sort_order-b.sort_order);
+  const colHTML=cols.map(c=>{const recs=(state.colRecipes||[]).filter(x=>x.collection_id===c.id).sort((a,b)=>a.position-b.position).map(x=>findRecipe(x.recipe_id)).filter(Boolean);if(!recs.length)return '';return `<div class="section-h pad"><h2>${escH(c.title)}</h2></div>${c.subtitle?`<p class="pad muted" style="margin:-6px 0 4px">${escH(c.subtitle)}</p>`:''}<div class="rail">${recs.map(r=>recipeCardHTML(r)).join('')}</div>`;}).join('');
   return `
   <div class="brandbar"><img class="crest" src="${CREST}" alt="The Grey Henry Society" loading="lazy" decoding="async">${state.user?`<button class="bell" onclick="openNotifsScreen()" aria-label="Powiadomienia">${ico('bell')}${(state.notifs||[]).filter(n=>!n.read).length?`<span class="bdot">${(state.notifs||[]).filter(n=>!n.read).length}</span>`:''}</button>`:''}</div>
   <div class="pad greetrow"><span class="greet">Dzień dobry</span><b>${dog?('Gotujemy dla '+escH(dog.name)):"Henry's Table"}</b></div>
@@ -1092,12 +1099,13 @@ function renderHome(){
   <div class="chips qcats">${quick.map(([c,l])=>`<button class="chip" onclick="goCat('${c}')">${l}</button>`).join('')}</div>
   <div class="pad"><div class="hero">
     <img src="${MONOG}" alt="" style="position:absolute;top:16px;right:16px;width:66px;opacity:.12;z-index:0;pointer-events:none" loading="lazy" decoding="async">
-    <span class="eyebrow">Polecane dnia</span><h3>${featured.name}</h3><p>${featured.desc}</p>
+    <span class="eyebrow">${rod?'Przepis dnia':'Polecane dnia'}</span><h3>${featured.name}</h3><p>${featured.desc}</p>
     <div class="meta"><span>${featured.time}</span><span>${featured.kcal}</span><span>${featured.ratingCount?star+' '+featured.rating:'Nowość'}</span></div>
     <div style="margin-top:18px"><button class="btn btn-gold" onclick="openRecipe('${featured.id}')">Zobacz przepis</button></div>
   </div></div>
   ${favList.length?`<div class="section-h pad"><h2>Twoje ulubione</h2><a onclick="go('recipes')">Wszystkie</a></div><div class="rail">${favList.map(r=>recipeCardHTML(r)).join('')}</div>`:''}
   ${dog?`<div class="section-h pad"><h2>Dla ${escH(dog.name)}</h2><a onclick="goMatched()">Wszystkie</a></div><div class="rail">${matched.map(r=>recipeCardHTML(r)).join('')}</div>`:''}
+  ${colHTML}
   <div class="section-h pad"><h2>Od dietetyków</h2><a onclick="goDietitian()">Więcej</a></div>
   <div class="rail">${diet.map(r=>recipeCardHTML(r)).join('')}</div>
   <div class="section-h pad"><h2>Popularne w społeczności</h2><a onclick="goComm()">Wszystkie</a></div>
