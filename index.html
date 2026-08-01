@@ -209,6 +209,16 @@ svg{display:block}
 .profhead .crest{height:90px;margin:0 auto 8px}
 .profhead h2{font-family:var(--serif);font-size:22px;font-weight:500}
 .profhead p{color:#9aa69d;font-size:12px;letter-spacing:.16em;text-transform:uppercase;margin-top:4px}
+.profhead .pf-ava{width:74px;height:74px;border-radius:50%;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-size:30px;font-weight:600;color:#23302B;background:linear-gradient(150deg,var(--gold),#a9986a);box-shadow:0 12px 26px -12px rgba(0,0,0,.55)}
+.profhead .pf-email{color:#8a968f;font-size:12px;margin-top:6px;text-transform:none;letter-spacing:0}
+.profhead .pf-edit{margin:16px auto 0;display:inline-flex;width:auto}
+.pf-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:2px 0 20px}
+.pf-stat{background:rgba(244,238,225,.05);border:1px solid var(--line);border-radius:16px;padding:14px 8px;text-align:center;cursor:pointer;font-family:var(--sans);color:inherit;transition:background .15s}
+.pf-stat:hover{background:rgba(244,238,225,.09)}
+.pf-stat b{display:block;font-family:var(--serif);font-size:22px;font-weight:600;color:var(--gold);line-height:1}
+.pf-stat span{display:block;font-size:11px;color:#9aa69d;letter-spacing:.05em;margin-top:5px}
+body.t-light .pf-stat{background:#fff;border-color:#eadfc9}
+body.t-light .pf-stat span{color:#6B7771}
 .dogcard{background:rgba(244,238,225,.05);border:1px solid var(--line);border-radius:20px;padding:18px 44px 18px 18px;display:flex;gap:16px;align-items:center;position:relative}
 .dogedit{position:absolute;top:14px;right:14px;width:32px;height:32px;border-radius:50%;border:1px solid var(--line);background:transparent;color:var(--gold);display:grid;place-items:center;cursor:pointer}
 .dogedit svg{width:15px;height:15px}
@@ -1332,9 +1342,14 @@ async function addWeight(){
 function renderProfile(){
   const favs=RECIPES.filter(r=>state.favs.has(r.id));
   return `
-  <div class="profhead"><img class="crest" src="${CREST}" alt="The Grey Henry Society" loading="lazy" decoding="async"><h2>Twój profil</h2><p>The Grey Henry Society Member</p>${state.user?`<button class="outbtn" style="margin:14px auto 0;display:inline-flex;width:auto" onclick="go('account')">${ico('edit')} Edytuj profil</button>`:''}</div>
+  <div class="profhead"><div class="pf-ava">${(((state.profile&&state.profile.display_name)||(state.user&&state.user.email)||'H').trim().charAt(0)||'H').toUpperCase()}</div><h2>${(state.profile&&state.profile.display_name)?escH(state.profile.display_name):'Twój profil'}</h2><p>The Grey Henry Society Member${isStaff()?' · '+(({admin:'Administrator',moderator:'Moderator',dietitian:'Dietetyk'})[state.profile.role]||''):''}</p>${(state.user&&state.user.email)?`<div class="pf-email">${escH(state.user.email)}</div>`:''}${state.user?`<button class="outbtn pf-edit" onclick="go('account')">${ico('edit')} Edytuj profil</button>`:''}</div>
   <div class="pad" style="padding-top:22px">
-    <div class="section-h" style="margin-top:4px"><h2 style="font-size:18px">Profile psów</h2><a onclick="openDogForm()">+ Dodaj psa</a></div>
+    <div class="pf-stats">
+      <button class="pf-stat" onclick="document.getElementById('secDogs').scrollIntoView({behavior:'smooth',block:'start'})"><b>${state.dogs.length}</b><span>Psy</span></button>
+      <button class="pf-stat" onclick="document.getElementById('secFav').scrollIntoView({behavior:'smooth',block:'start'})"><b>${favs.length}</b><span>Ulubione</span></button>
+      <button class="pf-stat" onclick="document.getElementById('secMine').scrollIntoView({behavior:'smooth',block:'start'})"><b>${state.myRecipes.length}</b><span>Moje przepisy</span></button>
+    </div>
+    <div class="section-h" id="secDogs" style="margin-top:4px"><h2 style="font-size:18px">Profile psów</h2><a onclick="openDogForm()">+ Dodaj psa</a></div>
     ${state.dogs.map((d,i)=>dogCardHTML(d,i)).join('')}
     <div id="dogForm"></div>
 
@@ -1356,11 +1371,11 @@ function renderProfile(){
     ${(state.pending&&state.pending.length)?state.pending.map(r=>`<div class="dogcard" style="margin-bottom:12px;align-items:center"><div class="ava" style="border-radius:14px">${ico('book')}</div><div style="flex:1"><h4 style="font-size:15px">${r.name}</h4><div style="margin-top:6px"><span class="status-pill">Oczekuje</span></div></div><div style="display:flex;gap:8px;flex:0 0 auto"><button class="btn btn-gold" style="padding:9px 13px;margin:0;font-size:13px" onclick="approveRecipe('${r.id}')">Zatwierdź</button><button class="outbtn" style="padding:9px 13px;font-size:13px" onclick="rejectRecipe('${r.id}')">Odrzuć</button></div></div>`).join(''):'<p class="muted" style="padding:2px 0 12px">Brak przepisów oczekujących na akceptację.</p>'}
     `:''}
 
-    <div class="section-h"><h2 style="font-size:18px">Moje przepisy</h2><a onclick="go('add')">+ Dodaj</a></div>
+    <div class="section-h" id="secMine"><h2 style="font-size:18px">Moje przepisy</h2><a onclick="go('add')">+ Dodaj</a></div>
     ${state.myRecipes.length?state.myRecipes.map(r=>`<div class="dogcard" style="margin-bottom:12px;cursor:pointer" onclick="openRecipe('${r.id}')"><div class="ava" style="border-radius:14px">${ico('book')}</div><div style="flex:1"><h4 style="font-size:16px">${r.name}</h4><div style="margin-top:7px"><span class="status-pill">${({pending:'Oczekuje na akceptację',approved:'Zatwierdzony',rejected:'Odrzucony',draft:'Szkic'})[r.status]||'Oczekuje na akceptację'}</span></div></div><span style="color:var(--gold)">${ico('chev')}</span></div>`).join('')
       :'<p class="muted" style="padding:2px 0 12px">Nie masz jeszcze własnych przepisów. <a style="color:var(--gold);cursor:pointer" onclick="go(\'add\')">Dodaj pierwszy</a>.</p>'}
 
-    <div class="section-h"><h2 style="font-size:18px">Ulubione</h2><span style="font-size:12px;color:#8a9189">${favs.length}</span></div>
+    <div class="section-h" id="secFav"><h2 style="font-size:18px">Ulubione</h2><span style="font-size:12px;color:#8a9189">${favs.length}</span></div>
     ${favs.length?favBlockHTML(favs):'<p class="muted" style="padding:6px 0 14px">Brak ulubionych. Dotknij serca na karcie przepisu, aby je tu zebrać.</p>'}
 
     <div class="section-h"><h2 style="font-size:18px">Ustawienia</h2></div>
