@@ -738,6 +738,20 @@ body.t-light .steprow .sn{background:var(--green);color:#fff}
 #regConsentRow{width:100%;max-width:300px;text-align:left;line-height:1.5;color:#5a635b}
 #regConsentRow input[type=checkbox]{width:18px;height:18px;max-width:18px;min-width:18px;padding:0;margin:1px 0 0;flex:0 0 auto;accent-color:var(--gold2);box-shadow:none;border-radius:5px}
 #regConsentRow span{flex:1}
+.foodcalc{margin:20px 0 6px;padding:18px;border:1.5px solid rgba(191,177,120,.4);border-radius:18px;background:rgba(191,177,120,.06)}
+body.t-light .foodcalc{background:#fbf7ee;border-color:rgba(143,127,72,.35)}
+.foodcalc .fc-badge{display:inline-block;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);background:rgba(191,177,120,.16);border:1px solid rgba(191,177,120,.3);padding:3px 9px;border-radius:999px;margin-bottom:10px}
+.foodcalc h3{border:none!important;padding:0!important;margin-top:0}
+.fc-lbl{display:block;font-size:13px;font-weight:600;margin:8px 0 7px;color:inherit}
+.fc-input{max-width:220px}
+.fc-out{margin-top:14px}
+.fc-big{display:flex;flex-direction:column;gap:2px;margin-bottom:10px}
+.fc-big b{font-family:var(--serif);font-size:30px;font-weight:500;color:var(--gold);line-height:1}
+body.t-light .fc-big b{color:var(--gold2)}
+.fc-big span{font-size:12px;color:#8a968f;letter-spacing:.02em}
+.fc-msg{font-size:14px;line-height:1.6;margin-bottom:8px}
+.fc-tip{font-size:12.5px;color:#8a968f;line-height:1.5}
+.fc-err{font-size:13px;color:#cf9075}
 #regConsentRow a{color:var(--gold);font-weight:500;text-decoration:underline;text-underline-offset:2px;text-decoration-thickness:1px;text-decoration-color:rgba(191,177,120,.55)}
 #regConsentRow a:hover{text-decoration-color:var(--gold)}
 
@@ -1998,6 +2012,29 @@ async function openRecipe(id){
   else{try{history.pushState({gh:'detail',r:id},'',_rurl);}catch(e){}}
   if(!r.detail){await ensureRecipeDetail(id); if(_detailId===id)paintDetail(id);}
 }
+function calcPortions(){
+  const el=document.getElementById('calcW'), out=document.getElementById('calcOut');
+  if(!el||!out)return;
+  if(!el.value.trim()){out.innerHTML='';return;}
+  const raw=el.value.replace(',','.').replace(/[^0-9.]/g,'');
+  const w=parseFloat(raw);
+  if(!(w>0)){out.innerHTML='<p class="fc-err">Podaj wagę psa większą od zera.</p>';return;}
+  const YIELD=2000, PERKG=40;
+  const daily=w*PERKG;
+  const portions=YIELD/daily;
+  const full=Math.floor(portions);
+  const remaining=YIELD-full*daily;
+  const dailyR=Math.round(daily/10)*10;
+  const remR=Math.round(remaining);
+  const whole=remR<1;
+  const plPor=n=>n===1?'pełną porcję dzienną':((n%10>=2&&n%10<=4&&(n%100<10||n%100>=20))?'pełne porcje dzienne':'pełnych porcji dziennych');
+  const plDni=n=>n===1?'dzień':'dni';
+  const daysTxt=whole?('na '+full+' '+plDni(full)):('na około '+portions.toFixed(1).replace('.',',')+' dnia');
+  const extra=(!whole&&remR>=1)?(' oraz około '+remR+' g dodatkowej porcji'):'';
+  out.innerHTML=`<div class="fc-big"><b>${dailyR} g</b><span>dzienna porcja Twojego psa</span></div>
+    <p class="fc-msg">Z tego przepisu przygotujesz <b>${full} ${plPor(full)}</b>${extra}. Łącznie przepis wystarczy <b>${daysTxt}</b>.</p>
+    <p class="fc-tip">Po ugotowaniu odważ porcje, zostaw porcję na najbliższy dzień, a pozostałe zamroź.</p>`;
+}
 function paintDetail(id){
   const r=findRecipe(id); if(!r)return; const fav=state.favs.has(id);
   const [bc,bt]=BADGE[r.badge];
@@ -2024,6 +2061,13 @@ function paintDetail(id){
       <h3>Składniki <span style="font-size:12px;color:#8a9189;font-family:var(--sans)">· ${r.portion}</span></h3>
       ${loading?dload('Ładowanie składników…'):r.ing.map(i=>`<div class="ing"><span>${i[0]}</span><span>${i[1]}</span></div>`).join('')}
       ${(()=>{const d=state.dogs&&state.dogs[0];const w=d?parseFloat(String(d.weight||'').replace(',','.')):0;if(!w)return '';const g=Math.round(w*25);return `<div class="portioncalc"><div class="pc-h">${ico('user')} Porcja dla ${escH(d.name)} (${w} kg)</div><div class="pc-v">≈ ${g} g dziennie</div><p>Szacunek dla dorosłego psa (~2,5% masy ciała) — podziel na 2 posiłki. Szczenięta i psy aktywne potrzebują więcej; dawkę potwierdź z weterynarzem.</p></div>`;})()}
+      ${isStaff()?`<div class="foodcalc">
+        <div class="fc-badge">Wersja testowa · widoczna tylko dla zespołu</div>
+        <h3 style="margin:0 0 4px">Na ile porcji wystarczy ten przepis?</h3>
+        <label class="fc-lbl">Ile waży Twój pies?</label>
+        <div class="inputunit fc-input"><input id="calcW" inputmode="decimal" autocomplete="off" placeholder="np. 18,5" value="${(state.dogs&&state.dogs[0])?String(state.dogs[0].weight||'').replace(/[^0-9.,]/g,''):''}" oninput="calcPortions()"><span class="unit">kg</span></div>
+        <div id="calcOut" class="fc-out"></div>
+      </div>`:''}
       <h3>Przygotowanie</h3>
       ${loading?dload('Ładowanie kroków…'):r.steps.map((s,n)=>`<div class="step"><div class="n">${n+1}</div><p>${s}</p></div>`).join('')}
       ${(r.good&&r.good.length)||(r.bad&&r.bad.length)?`<h3>Dla jakich psów</h3>
@@ -2039,6 +2083,7 @@ function paintDetail(id){
       <div class="cbox"><input id="cInput" placeholder="Napisz komentarz…" onkeydown="if(event.key==='Enter')addComment('${id}')"><button onclick="addComment('${id}')" aria-label="Wyślij">${ico('send')}</button></div>
       <p class="disclaim">Wartości odżywcze i porcje są orientacyjne i nie zastępują konsultacji z lekarzem weterynarii ani dietetykiem zwierzęcym.</p>
     </div>`;
+  if(isStaff()){try{calcPortions();}catch(e){}}
 }
 function hideDetail(){_detailId=null;$('detail').classList.remove('open');try{if(location.search)history.replaceState(history.state,'',location.pathname);}catch(e){}}
 function openRecipeFromUrl(){try{const rid=new URLSearchParams(location.search).get('r');if(rid&&findRecipe(rid))openRecipe(rid);}catch(e){}}
