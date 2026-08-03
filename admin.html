@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>The Grey Henry Society — Panel administracyjny</title>
+<title>Molly's Table — Panel administracyjny</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -131,7 +131,7 @@ input[type=checkbox]{width:17px;height:17px;accent-color:var(--gold2);cursor:poi
 <div id="login">
   <div class="loginbox">
     <img src="logo/crest_green.png" alt="" onerror="this.style.display='none'">
-    <div class="eyebrow">The Grey Henry Society</div>
+    <div class="eyebrow">Molly's Table</div>
     <h1>Panel administracyjny</h1>
     <input id="lemail" type="email" placeholder="E-mail" autocomplete="username">
     <input id="lpass" type="password" placeholder="Hasło" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
@@ -143,7 +143,7 @@ input[type=checkbox]{width:17px;height:17px;accent-color:var(--gold2);cursor:poi
 
 <div id="app">
   <aside class="sidebar">
-    <div class="brand"><img src="logo/mono_gold.png" alt="" onerror="this.style.display='none'"><div><b>Grey Henry</b><span>Administracja</span></div></div>
+    <div class="brand"><img src="logo/mono_gold.png" alt="" onerror="this.style.display='none'"><div><b>Molly's Table</b><span>Administracja</span></div></div>
     <nav class="nav" id="nav">
       <a data-v="dash" class="active"><span class="ic">▦</span> Pulpit</a>
       <a data-v="mod"><span class="ic">⚑</span> Moderacja <span id="modcount"></span></a>
@@ -703,7 +703,7 @@ async function createUserForm(){
 }
 async function resetUserPass(id){
   if(!confirm('Wysłać link resetu hasła do tego użytkownika?'))return;
-  const r=await adminAction('reset_password',{userId:id,redirectTo:'https://trzesniowskipeter-a11y.github.io/grey-henry-app/'});
+  const r=await adminAction('reset_password',{userId:id,redirectTo:'https://thegreyhenry.com/'});
   if(r.error){toast('Błąd: '+r.error);return;}
   toast('Wysłano link resetu hasła');
 }
@@ -722,7 +722,7 @@ function renderAnnounce(){
     <input id="an_title" placeholder="np. Nowe przepisy jesienne" style="margin-bottom:10px">
     <label class="muted-cell" style="display:block;margin-bottom:4px">Treść</label>
     <textarea id="an_body" rows="4" placeholder="Treść widoczna w zakładce Społeczność…"></textarea>
-    <div style="margin-top:10px;display:flex;align-items:center;gap:12px;flex-wrap:wrap"><button class="btn gold" onclick="createAnnouncement()">Opublikuj</button><span class="muted-cell">Nadawca: <b>The Grey Henry Society</b></span></div>
+    <div style="margin-top:10px;display:flex;align-items:center;gap:12px;flex-wrap:wrap"><button class="btn gold" onclick="createAnnouncement()">Opublikuj</button><span class="muted-cell">Nadawca: <b>Molly's Table</b></span></div>
   </div></div>`;
   html+=`<div class="panel"><div class="panel-h"><h3>Opublikowane (${list.length})</h3></div>`;
   if(!list.length)html+='<div class="empty">Brak ogłoszeń.</div>';
@@ -736,7 +736,7 @@ function renderPush(){
     <p id="pushAudience" class="muted-cell" style="margin:0 0 4px">Subskrybentów: …</p>
     <p class="muted-cell" style="margin:0 0 6px;font-size:12.5px;line-height:1.6">Push dociera do osób, które włączyły powiadomienia na urządzeniu. Aby dotrzeć do <b>wszystkich</b> użytkowników, zaznacz opcję „Pokaż też jako ogłoszenie" — pojawi się w aplikacji u każdego.</p>
     <label style="display:block;margin:12px 0 5px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold2);font-weight:600">Tytuł</label>
-    <input id="pushTitle" maxlength="120" placeholder="np. Nowy przepis w Henry's Table!" oninput="updatePushPreview()">
+    <input id="pushTitle" maxlength="120" placeholder="np. Nowy przepis w Molly's Table!" oninput="updatePushPreview()">
     <label style="display:block;margin:12px 0 5px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold2);font-weight:600">Treść</label>
     <textarea id="pushBody" rows="3" maxlength="300" placeholder="Treść powiadomienia…" oninput="updatePushPreview()"></textarea>
     <label style="display:block;margin:12px 0 5px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold2);font-weight:600">Link po kliknięciu (opcjonalnie)</label>

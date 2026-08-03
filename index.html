@@ -8,19 +8,19 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Henry's Table">
+<meta name="apple-mobile-web-app-title" content="Molly's Table">
 <link rel="apple-touch-icon" href="logo/apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="192x192" href="logo/icon-192.png">
-<title>Henry's Table by The Grey Henry Society</title>
-<meta name="description" content="The Grey Henry Society — premium przepisy i suplementy dla psów, moderowane z troską. Twórz profil psa, planuj posiłki i odkrywaj sprawdzone przepisy.">
+<title>Molly's Table</title>
+<meta name="description" content="Molly's Table — premium przepisy i suplementy dla psów, moderowane z troską. Twórz profil psa, planuj posiłki i odkrywaj sprawdzone przepisy.">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="The Grey Henry Society">
-<meta property="og:title" content="Henry's Table by The Grey Henry Society">
+<meta property="og:site_name" content="Molly's Table">
+<meta property="og:title" content="Molly's Table">
 <meta property="og:description" content="Premium przepisy i suplementy dla psów, moderowane z troską.">
 <meta property="og:image" content="logo/icon-512.png">
 <meta property="og:locale" content="pl_PL">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Henry's Table by The Grey Henry Society">
+<meta name="twitter:title" content="Molly's Table">
 <meta name="twitter:description" content="Premium przepisy i suplementy dla psów, moderowane z troską.">
 <meta name="twitter:image" content="logo/icon-512.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -587,7 +587,7 @@ body.t-light .brandbar::after{content:"";width:42px;height:1px;background:linear
   .app{flex-direction:row}
   /* ----- boczne menu ----- */
   .nav{flex-direction:column;justify-content:flex-start;align-items:stretch;width:240px;height:100%;flex:0 0 auto;border-top:none;border-right:1px solid var(--line);box-shadow:none;padding:26px 16px;gap:5px}
-  .nav::before{content:"Henry's Table";display:block;font-family:var(--serif);font-size:18px;line-height:1.25;color:var(--gold);padding:6px 14px 24px}
+  .nav::before{content:"Molly's Table";display:block;font-family:var(--serif);font-size:18px;line-height:1.25;color:var(--gold);padding:6px 14px 24px}
   .nav button{flex:0 0 auto;flex-direction:row;justify-content:flex-start;gap:14px;width:100%;padding:12px 14px;border-radius:12px;font-size:13px;letter-spacing:.02em;text-transform:none}
   .nav button .dot{display:none}
   .nav button svg{width:21px;height:21px}
@@ -929,10 +929,10 @@ body.t-light #regConsentRow a{color:var(--gold2);text-decoration-color:rgba(143,
 <body class="t-light">
 <div class="framewrap">
   <div class="device">
-    <div class="splash" id="splash"><img src="logo/crest_ivory.png" alt="The Grey Henry Society" loading="lazy" decoding="async"><div class="tag">Troska godna rodowodu</div></div>
+    <div class="splash" id="splash"><img src="logo/crest_ivory.png" alt="Molly's Table" loading="lazy" decoding="async"><div class="tag">Troska godna rodowodu</div></div>
     <div class="login" id="login"><div class="login-card">
-      <img src="logo/crest_green.png" alt="The Grey Henry Society" loading="lazy" decoding="async"><div class="eyebrow">The Grey Henry Society</div>
-      <h2 id="authTitle">Henry's Table</h2>
+      <img src="logo/crest_green.png" alt="Molly's Table" loading="lazy" decoding="async"><div class="eyebrow">Molly's Table</div>
+      <h2 id="authTitle">Molly's Table</h2>
       <p id="authSub">Zaloguj się, aby zarządzać psami, ulubionymi i własnymi przepisami.</p>
       <div class="authtabs">
         <button id="tabLogin" class="authtab active" onclick="setAuthMode('login')">Logowanie</button>
@@ -1043,7 +1043,7 @@ function setBusy(b){const e=$('busy');if(e)e.classList.toggle('on',!!b);}
 const SB_URL='https://aprzeqqjtwtbaoqbdolv.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFwcnplcXFqdHd0YmFvcWJkb2x2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NzY1MjYsImV4cCI6MjA5NzQ1MjUyNn0.AxNIw_2qJf32ne8XslXFFMjV4dU9jLlFkOOxmUmD0QM';
 const _pf=(u,o={})=>{const h={};const hs=o.headers;if(hs){if(typeof hs.forEach==='function'){hs.forEach((v,k)=>{h[k]=v;});}else{Object.assign(h,hs);}}return fetch(u,Object.assign({},o,{headers:h}));};
-const sb=window.supabase?window.supabase.createClient(SB_URL,SB_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storageKey: 'gh-auth', storage: window.localStorage } }):null; async function deleteAccount(){ if(!confirm('Na pewno usunąć konto? Tej operacji nie można cofnąć — wszystkie Twoje dane zostaną trwale usunięte.')) return; try{ const { error } = await sb.functions.invoke('delete-account',{ body:{} }); if(error) throw error; await sb.auth.signOut(); alert('Konto zostało usunięte.'); location.reload(); }catch(e){ toast('Nie udało się usunąć konta'); } }const VAPID_PUBLIC = 'BCO_aIDGM_prEbH87pRzAY3ysLFNxYRLpWRxhP7VeNLfpMU30HyqQ90UdUGVOPa57PZpC_y0zY_2qh5gxE4B1jM'; function _b64(b){const p='='.repeat((4-b.length%4)%4);const s=(b+p).replace(/-/g,'+').replace(/_/g,'/');return Uint8Array.from([...atob(s)].map(c=>c.charCodeAt(0)));} async function enablePush(){ try{ if(!('serviceWorker' in navigator)||!('PushManager' in window)){toast('Powiadomienia nieobsługiwane na tym urządzeniu');return;} if((await Notification.requestPermission())!=='granted'){toast('Brak zgody na powiadomienia');return;} const reg=await navigator.serviceWorker.ready; const sub=(await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:_b64(VAPID_PUBLIC)})).toJSON(); await sb.from('push_subscriptions').upsert({user_id:state.user.id,endpoint:sub.endpoint,p256dh:sub.keys.p256dh,auth:sub.keys.auth,user_agent:navigator.userAgent},{onConflict:'endpoint'}); toast('Powiadomienia włączone'); }catch(e){toast('Nie udało się włączyć powiadomień');} } async function testPush(){ try{ await sb.functions.invoke('send-push',{body:{title:"Henry's Table",body:'Powiadomienia działają!',url:'/'}}); toast('Test wyslany do serwera'); }catch(e){ alert('Blad testu push: '+(e&&e.message?e.message:JSON.stringify(e))); } }
+const sb=window.supabase?window.supabase.createClient(SB_URL,SB_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storageKey: 'gh-auth', storage: window.localStorage } }):null; async function deleteAccount(){ if(!confirm('Na pewno usunąć konto? Tej operacji nie można cofnąć — wszystkie Twoje dane zostaną trwale usunięte.')) return; try{ const { error } = await sb.functions.invoke('delete-account',{ body:{} }); if(error) throw error; await sb.auth.signOut(); alert('Konto zostało usunięte.'); location.reload(); }catch(e){ toast('Nie udało się usunąć konta'); } }const VAPID_PUBLIC = 'BCO_aIDGM_prEbH87pRzAY3ysLFNxYRLpWRxhP7VeNLfpMU30HyqQ90UdUGVOPa57PZpC_y0zY_2qh5gxE4B1jM'; function _b64(b){const p='='.repeat((4-b.length%4)%4);const s=(b+p).replace(/-/g,'+').replace(/_/g,'/');return Uint8Array.from([...atob(s)].map(c=>c.charCodeAt(0)));} async function enablePush(){ try{ if(!('serviceWorker' in navigator)||!('PushManager' in window)){toast('Powiadomienia nieobsługiwane na tym urządzeniu');return;} if((await Notification.requestPermission())!=='granted'){toast('Brak zgody na powiadomienia');return;} const reg=await navigator.serviceWorker.ready; const sub=(await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:_b64(VAPID_PUBLIC)})).toJSON(); await sb.from('push_subscriptions').upsert({user_id:state.user.id,endpoint:sub.endpoint,p256dh:sub.keys.p256dh,auth:sub.keys.auth,user_agent:navigator.userAgent},{onConflict:'endpoint'}); toast('Powiadomienia włączone'); }catch(e){toast('Nie udało się włączyć powiadomień');} } async function testPush(){ try{ await sb.functions.invoke('send-push',{body:{title:"Molly's Table",body:'Powiadomienia działają!',url:'/'}}); toast('Test wyslany do serwera'); }catch(e){ alert('Blad testu push: '+(e&&e.message?e.message:JSON.stringify(e))); } }
 const DIFFL={easy:'Łatwy',medium:'Średni',hard:'Trudny'};
 const WASHES=['green','parch','forest','gold'];
 function mapDbRecipe(r,ings,steps,tagKeys,i){
@@ -1170,7 +1170,7 @@ function showPushGate(){
   el.innerHTML=`<div class="pushgate-box">
     <img src="${CREST}" class="pg-crest" alt="" loading="lazy" decoding="async">
     <h3>Bądź na bieżąco</h3>
-    <p>Włącz powiadomienia, aby nie przegapić nowych przepisów, przepisu dnia i ogłoszeń od The Grey Henry Society.</p>
+    <p>Włącz powiadomienia, aby nie przegapić nowych przepisów, przepisu dnia i ogłoszeń od Molly's Table.</p>
     <button class="btn btn-gold" style="width:100%;margin:0" onclick="enablePushFromGate()">Włącz powiadomienia</button>
     <button class="pg-later" onclick="closePushGate(true)">Może później</button>
   </div>`;
@@ -1203,7 +1203,7 @@ async function start(){
 }
 async function doLogin(){const e=$('lg_email').value.trim(),p=$('lg_pass').value;if(!sb)return;const {error}=await sb.auth.signInWithPassword({email:e,password:p});if(error)return toast(error.message);toast('Zalogowano');afterLogin();}
 async function doGoogle(){if(!sb)return;const {error}=await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:window.location.href.split('#')[0]}});if(error)toast(error.message);}
-async function doRegister(){ if(!document.getElementById('regConsent')?.checked){ toast('Zaakceptuj Regulamin i Politykę prywatności'); return; }const e=$('lg_email').value.trim(),p=$('lg_pass').value,n=$('lg_name').value.trim();if(!sb)return;const {data,error}=await sb.auth.signUp({email:e,password:p,options:{data:{display_name:n}}});if(error)return toast(error.message);if(!data.session){toast('Konto utworzone — potwierdź e-mail (lub wyłącz potwierdzanie w Supabase).');}else{toast('Witamy w Henry\'s Table!');afterLogin();}}
+async function doRegister(){ if(!document.getElementById('regConsent')?.checked){ toast('Zaakceptuj Regulamin i Politykę prywatności'); return; }const e=$('lg_email').value.trim(),p=$('lg_pass').value,n=$('lg_name').value.trim();if(!sb)return;const {data,error}=await sb.auth.signUp({email:e,password:p,options:{data:{display_name:n}}});if(error)return toast(error.message);if(!data.session){toast('Konto utworzone — potwierdź e-mail (lub wyłącz potwierdzanie w Supabase).');}else{toast('Witamy w Molly\'s Table!');afterLogin();}}
 async function doLogout(){if(sb){state._intentionalSignOut=true;await sb.auth.signOut();}if(state._presenceTimer){clearInterval(state._presenceTimer);state._presenceTimer=null;}state.user=null;state.profile=null;state.favs=new Set();state.dogs=[];state.myRecipes=[];state.pending=[];state.shop=[];state.notifs=[];state.comments={};state.myRatings={};state.plan=[['Pon',null],['Wt',null],['Śr',null],['Czw',null],['Pt',null],['Sob',null],['Niedz',null]];state.tab='home';$('login').classList.add('show');render();}
 let authMode='login';
 function setAuthMode(m){
@@ -1227,7 +1227,7 @@ async function doForgot(){
 function showRecovery(){
   const l=$('login');if(!l)return;
   l.classList.add('show');
-  l.innerHTML=`<img src="${CREST}" alt="" loading="lazy" decoding="async"><div class="eyebrow">The Grey Henry Society</div><h2>Ustaw nowe hasło</h2><p>Wpisz nowe hasło do swojego konta.</p>
+  l.innerHTML=`<img src="${CREST}" alt="" loading="lazy" decoding="async"><div class="eyebrow">Molly's Table</div><h2>Ustaw nowe hasło</h2><p>Wpisz nowe hasło do swojego konta.</p>
     <input id="rec_pass" type="password" placeholder="Nowe hasło (min. 6 znaków)">
     <input id="rec_pass2" type="password" placeholder="Powtórz hasło">
     <button class="btn" onclick="doSetNewPassword()">Zapisz nowe hasło</button>`;
@@ -1392,8 +1392,8 @@ function renderHome(){
   const cols=(state.collections||[]).filter(c=>c.active).sort((a,b)=>a.sort_order-b.sort_order);
   const colHTML=cols.map(c=>{const recs=(state.colRecipes||[]).filter(x=>x.collection_id===c.id).sort((a,b)=>a.position-b.position).map(x=>findRecipe(x.recipe_id)).filter(Boolean);if(!recs.length)return '';return `<div class="section-h pad"><h2>${escH(c.title)}</h2></div>${c.subtitle?`<p class="pad muted" style="margin:-6px 0 4px">${escH(c.subtitle)}</p>`:''}<div class="rail">${recs.map(r=>recipeCardHTML(r)).join('')}</div>`;}).join('');
   return `
-  <div class="brandbar"><img class="crest" src="${CREST}" alt="The Grey Henry Society" loading="lazy" decoding="async">${state.user?`<button class="bell" onclick="openNotifsScreen()" aria-label="Powiadomienia">${ico('bell')}${(state.notifs||[]).filter(n=>!n.read).length?`<span class="bdot">${(state.notifs||[]).filter(n=>!n.read).length}</span>`:''}</button>`:''}</div>
-  <div class="pad greetrow"><span class="greet">Dzień dobry</span><b>${dog?('Gotujemy dla '+escH(dog.name)):"Henry's Table"}</b></div>
+  <div class="brandbar"><img class="crest" src="${CREST}" alt="Molly's Table" loading="lazy" decoding="async">${state.user?`<button class="bell" onclick="openNotifsScreen()" aria-label="Powiadomienia">${ico('bell')}${(state.notifs||[]).filter(n=>!n.read).length?`<span class="bdot">${(state.notifs||[]).filter(n=>!n.read).length}</span>`:''}</button>`:''}</div>
+  <div class="pad greetrow"><span class="greet">Dzień dobry</span><b>${dog?('Gotujemy dla '+escH(dog.name)):"Molly's Table"}</b></div>
   ${state.user&&!state.dogs.length?`<div class="pad"><div class="onboard" onclick="goAddDog()"><div class="ob-i">${ico('user')}</div><div style="flex:1"><b>Dodaj profil swojego psa</b><p>Spersonalizuj przepisy, alergie i porcje — zajmie chwilę.</p></div>${ico('chev')}</div></div>`:''}
   <div class="pad"><div class="searchwrap">${ico('search')}<input id="homeSearch" placeholder="Szukaj przepisu lub składnika…" value="${state.q}" oninput="homeSearch(this.value)">${state.q?`<button class="clr" onclick="setQ('')" aria-label="Wyczyść">${ico('x')}</button>`:''}</div>
   <button class="morebtn" style="margin-top:10px" onclick="goFilters()">${ico('filter')} Filtry i kategorie</button></div>
@@ -1419,7 +1419,7 @@ function renderHome(){
 function footerHTML(){
   return `<div class="appfooter">
     <div class="sprig"><span>${star} ${star} ${star}</span></div>
-    <img class="ftcrest" src="${CREST}" alt="The Grey Henry Society" loading="lazy" decoding="async">
+    <img class="ftcrest" src="${CREST}" alt="Molly's Table" loading="lazy" decoding="async">
     <div class="ft-tag">Troska godna rodowodu</div>
     <div class="ft-install">
       <div class="ft-h">Zainstaluj na telefonie</div>
@@ -1514,7 +1514,7 @@ function delRow(btn,kind){
 let wizStep=1;
 function renderAddRecipe(){
   if(!state.user){return `
-  <div class="brandbar"><img class="crest" src="${CREST}" alt="The Grey Henry Society" loading="lazy" decoding="async"></div>
+  <div class="brandbar"><img class="crest" src="${CREST}" alt="Molly's Table" loading="lazy" decoding="async"></div>
   <div class="pad" style="text-align:center;padding-top:24px">
     <div class="eyebrow">Dodaj przepis</div>
     <h2 class="serif" style="font-size:22px;margin:10px 0 6px">Tylko dla zalogowanych</h2>
@@ -1734,7 +1734,7 @@ function renderCommunity(){
   <div class="pad" style="text-align:center;margin-bottom:16px"><span class="eyebrow">Stół wspólny</span><b class="serif" style="display:block;font-size:24px;font-weight:500;margin-top:6px">Społeczność</b></div>
   <div class="pad" style="padding-bottom:30px">
     ${(state.announcements||[]).length?`<div class="section-h"><h2 style="font-size:18px">Ogłoszenia</h2></div>
-    ${state.announcements.map(a=>`<div class="comm-post announce"><div class="ph"><div class="av crest-av"><img src="${CREST}" alt="" loading="lazy" decoding="async"></div><div><b>The Grey Henry Society</b><small>Ogłoszenie · ${a.when}</small></div></div><h4 class="ann-t">${a.title}</h4><p>${a.body}</p></div>`).join('')}`:''}
+    ${state.announcements.map(a=>`<div class="comm-post announce"><div class="ph"><div class="av crest-av"><img src="${CREST}" alt="" loading="lazy" decoding="async"></div><div><b>Molly's Table</b><small>Ogłoszenie · ${a.when}</small></div></div><h4 class="ann-t">${a.title}</h4><p>${a.body}</p></div>`).join('')}`:''}
 
     <div class="section-h"><h2 style="font-size:18px">Najnowsze przepisy od użytkowników</h2></div>
     ${userRecipes.length?`<div class="rail">${userRecipes.map(r=>recipeCardHTML(r)).join('')}</div>`:`<p class="muted" style="padding:2px 0 10px">Nikt jeszcze nie dodał własnego przepisu. Bądź pierwszy — <a style="color:var(--gold);cursor:pointer" onclick="go('add')">dodaj przepis</a>.</p>`}
@@ -1852,7 +1852,7 @@ function renderProfile(){
   const notifSupported=('Notification' in window)&&('serviceWorker' in navigator)&&('PushManager' in window);
   const notifPerm=notifSupported?Notification.permission:'unsupported';
   return `
-  <div class="profhead"><div class="pf-ava">${(((state.profile&&state.profile.display_name)||(state.user&&state.user.email)||'H').trim().charAt(0)||'H').toUpperCase()}</div><h2>${(state.profile&&state.profile.display_name)?escH(state.profile.display_name):'Twój profil'}</h2><p>The Grey Henry Society Member${isStaff()?' · '+(({admin:'Administrator',moderator:'Moderator',dietitian:'Dietetyk'})[state.profile.role]||''):''}</p>${(state.user&&state.user.email)?`<div class="pf-email">${escH(state.user.email)}</div>`:''}${state.user?`<button class="outbtn pf-edit" onclick="go('account')">${ico('edit')} Edytuj profil</button>`:''}</div>
+  <div class="profhead"><div class="pf-ava">${(((state.profile&&state.profile.display_name)||(state.user&&state.user.email)||'H').trim().charAt(0)||'H').toUpperCase()}</div><h2>${(state.profile&&state.profile.display_name)?escH(state.profile.display_name):'Twój profil'}</h2><p>Molly's Table Member${isStaff()?' · '+(({admin:'Administrator',moderator:'Moderator',dietitian:'Dietetyk'})[state.profile.role]||''):''}</p>${(state.user&&state.user.email)?`<div class="pf-email">${escH(state.user.email)}</div>`:''}${state.user?`<button class="outbtn pf-edit" onclick="go('account')">${ico('edit')} Edytuj profil</button>`:''}</div>
   <div class="pad" style="padding-top:22px">
     <div class="pf-stats">
       <button class="pf-stat" onclick="document.getElementById('secDogs').scrollIntoView({behavior:'smooth',block:'start'})"><b>${state.dogs.length}</b><span>Psy</span></button>
@@ -1893,7 +1893,7 @@ function renderProfile(){
       ${state.user?`<div class="menu-item" onclick="allergyMode()"><span class="ic">${ico('flag')}</span><span class="lbl">Tryb alergii</span><span class="ar">${ico('chev')}</span></div>`:''}
       ${state.user&&notifSupported?`<div class="menu-item" onclick="notifSettings()"><span class="ic">${ico('bell')}</span><span class="lbl">Powiadomienia <span class="notif-dot ${notifPerm}"></span> ${notifPerm==='granted'?'włączone':(notifPerm==='denied'?'zablokowane':'wyłączone')}</span><span class="ar">${notifPerm==='granted'?'✓':'Włącz'}</span></div>`:''}
       <div class="menu-item" onclick="toggleTheme()"><span class="ic">${ico('theme')}</span><span class="lbl">Wygląd: ${currentTheme()==='dark'?'Ciemny (zielony)':'Jasny'}</span><span class="ar">Zmień</span></div>
-      <div class="menu-item" onclick="toast('The Grey Henry Society — premium przepisy i suplementy dla psów, moderowane z troską.')"><span class="ic">${ico('info')}</span><span class="lbl">O Society</span><span class="ar">${ico('chev')}</span></div>
+      <div class="menu-item" onclick="toast('Molly's Table — premium przepisy i suplementy dla psów, moderowane z troską.')"><span class="ic">${ico('info')}</span><span class="lbl">O Society</span><span class="ar">${ico('chev')}</span></div>
       ${state.user?`<div class="menu-item" onclick="go('account')"><span class="ic">${ico('flag')}</span><span class="lbl">Ustawienia konta</span><span class="ar">${ico('chev')}</span></div>`:''}
       ${state.user?`<div class="menu-item" onclick="doLogout()"><span class="ic">${ico('x')}</span><span class="lbl">Wyloguj</span><span class="ar">${ico('chev')}</span></div>`:''}
     </div>
@@ -1914,7 +1914,7 @@ function dogFormHTML(d,editing){
     <div class="formsec">Podstawy</div>
     <input type="file" id="d_photo" accept="image/*" style="display:none" onchange="onDogPhotoPick(event)">
     <div class="photopick"><div class="photo-av" id="d_photo_av" onclick="document.getElementById('d_photo').click()" ${d.photo?`style="background-image:url('${d.photo}')"`:''}>${d.photo?'':ico('image')}</div><div class="photo-cap"><b>Zdjęcie psa</b><span class="hint">Dotknij kółka, aby ${d.photo?'zmienić':'dodać'} zdjęcie</span></div></div>
-    <div class="field"><label>Imię psa</label><input id="d_name" value="${at(d.name)}" placeholder="np. Henry"></div>
+    <div class="field"><label>Imię psa</label><input id="d_name" value="${at(d.name)}" placeholder="np. Molly"></div>
     <div class="row2"><div class="field"><label>Rasa lub typ</label><input id="d_breed" value="${at(d.breed)}" placeholder="np. Chart"></div><div class="field"><label>Wiek</label><div class="inputunit"><input id="d_age" value="${anum}" inputmode="numeric" placeholder="np. 3"><span class="unit">lat</span></div></div></div>
     <div class="field"><label>Waga</label><div class="inputunit"><input id="d_weight" value="${wnum}" inputmode="decimal" placeholder="np. 20"><span class="unit">kg</span></div></div>
 
@@ -2065,12 +2065,12 @@ function exportShopping(){
   const li=items.length?items.map(i=>`<li>${esc(i.label)}</li>`).join(''):'<li style="color:#888">(lista pusta)</li>';
   const pr=plan.length?plan.map(([d,n])=>`<tr><td style="width:70px">${esc(d)}</td><td>${esc(n)}</td></tr>`).join(''):'<tr><td colspan="2" style="color:#888">(brak zaplanowanych posiłków)</td></tr>';
   const dt=new Date().toLocaleDateString('pl-PL');
-  w.document.write(`<!doctype html><html lang="pl"><head><meta charset="utf-8"><title>Lista zakupów — The Grey Henry Society</title>
+  w.document.write(`<!doctype html><html lang="pl"><head><meta charset="utf-8"><title>Lista zakupów — Molly's Table</title>
   <style>body{font-family:Georgia,serif;color:#23302B;max-width:640px;margin:32px auto;padding:0 20px}h1{font-size:24px;border-bottom:2px solid #BFB178;padding-bottom:8px;margin-bottom:4px}h2{font-size:16px;margin-top:26px;color:#2A3431}ul{line-height:1.9;font-size:15px}table{width:100%;border-collapse:collapse;font-size:15px}td{padding:7px 4px;border-bottom:1px solid #e3dccb}.eyebrow{letter-spacing:3px;text-transform:uppercase;font-size:11px;color:#8F7F48}.foot{margin-top:30px;font-size:12px;color:#888}@media print{.noprint{display:none}}button{font-family:sans-serif;background:#2A3431;color:#fff;border:0;border-radius:8px;padding:10px 18px;cursor:pointer;margin-top:20px}</style></head>
-  <body><div class="eyebrow">The Grey Henry Society</div><h1>Lista zakupów</h1><div style="font-size:12px;color:#888">${dt}</div>
+  <body><div class="eyebrow">Molly's Table</div><h1>Lista zakupów</h1><div style="font-size:12px;color:#888">${dt}</div>
   <h2>Produkty</h2><ul>${li}</ul>
   <h2>Plan tygodnia</h2><table>${pr}</table>
-  <p class="foot">Wygenerowano z planera i listy zakupów w aplikacji The Grey Henry Society.</p>
+  <p class="foot">Wygenerowano z planera i listy zakupów w aplikacji Molly's Table.</p>
   <button class="noprint" onclick="window.print()">Drukuj / zapisz jako PDF</button>
   <script>window.onload=function(){setTimeout(function(){window.print();},400);};<\/script></body></html>`);
   w.document.close();
@@ -2118,7 +2118,7 @@ async function shareRecipe(id){
     const r=findRecipe(id); if(!r)return;
     const url=recipeLink(id);
     if(navigator.share){
-      try{ await navigator.share({title:r.name,text:'Zobacz przepis w Henry\u2019s Table by The Grey Henry Society: '+r.name,url:url}); return; }
+      try{ await navigator.share({title:r.name,text:'Zobacz przepis w Molly\u2019s Table: '+r.name,url:url}); return; }
       catch(e){ if(e&&e.name==='AbortError')return; }
     }
     copyRecipeLink(id);
@@ -2286,7 +2286,7 @@ function showSheet(html){const b=$('sheetBox');if(!b)return;b.innerHTML=html;$('
 function closeSheet(){$('sheet').classList.remove('show');}
 function copyUrl(){const u=location.href.split('#')[0];try{navigator.clipboard.writeText(u);toast('Skopiowano adres — wklej go w Safari');}catch(e){toast(u);}}
 function iosStepsHTML(){return `<h3>Zainstaluj na iPhonie</h3>
-  <p>Dodaj The Grey Henry do ekranu początkowego — będzie działać jak zwykła aplikacja, na pełnym ekranie.</p>
+  <p>Dodaj Molly's Table do ekranu początkowego — będzie działać jak zwykła aplikacja, na pełnym ekranie.</p>
   <ol>
     <li>Na dolnym pasku Safari dotknij ikony <span class="shareicon">⬆</span> <b>Udostępnij</b>.</li>
     <li>Przewiń listę i wybierz <b>„Do ekranu początkowego"</b>.</li>
@@ -2298,7 +2298,7 @@ function iosSafariHTML(){return `<h3>Otwórz w Safari</h3>
   <p>Skopiuj adres, otwórz Safari, wklej go, a następnie dotknij <span class="shareicon">⬆</span> <b>Udostępnij</b> → <b>„Do ekranu początkowego"</b>.</p>
   <div class="sheet-actions"><button class="btn btn-gold" style="margin:0" onclick="copyUrl()">Skopiuj adres</button><button class="btn gline" style="margin:0" onclick="closeSheet()">Zamknij</button></div>`;}
 function androidStepsHTML(){return `<h3>Zainstaluj na Androidzie</h3>
-  <p>Dodaj The Grey Henry do ekranu — będzie działać jak zwykła aplikacja.</p>
+  <p>Dodaj Molly's Table do ekranu — będzie działać jak zwykła aplikacja.</p>
   <ol>
     <li>Otwórz menu przeglądarki <b>⋮</b> (Chrome, prawy górny róg).</li>
     <li>Wybierz <b>„Zainstaluj aplikację"</b> lub <b>„Dodaj do ekranu głównego"</b>.</li>
