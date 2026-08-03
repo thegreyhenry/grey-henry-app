@@ -167,6 +167,9 @@ svg{display:block}
 .dhead .fav.on svg{fill:currentColor}
 .dhead .share{right:66px;color:var(--gold)}
 @media (hover:hover){.dhead .share:hover{border-color:var(--gold);background:rgba(191,177,120,.15)}}
+.circ-btn{z-index:6;pointer-events:auto;touch-action:manipulation;-webkit-tap-highlight-color:transparent;padding:0;font-family:inherit}
+button.circ-btn{appearance:none;-webkit-appearance:none}
+.dhead .dscrim{pointer-events:none}
 .dtitle{position:relative;z-index:2}
 .dtitle .badge{position:static;display:inline-block;margin-bottom:12px}
 .dtitle h1{font-family:var(--serif);font-size:30px;font-weight:600;line-height:1.08;margin-top:6px}
@@ -2084,14 +2087,17 @@ async function copyRecipeLink(id){
   try{ const ta=document.createElement('textarea');ta.value=url;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.focus();ta.select();const ok=document.execCommand('copy');ta.remove();toast(ok?'Skopiowano link ✓':('Skopiuj ręcznie: '+url)); }catch(e){ toast('Skopiuj ręcznie: '+url); }
 }
 async function shareRecipe(id){
-  const r=findRecipe(id); if(!r)return;
-  const url=recipeLink(id);
-  if(navigator.share){
-    try{ await navigator.share({title:r.name+' — Henry\u2019s Table',text:'Zobacz przepis \u201E'+r.name+'\u201D w Henry\u2019s Table by The Grey Henry Society',url}); return; }
-    catch(e){ if(e&&e.name==='AbortError')return; }
-  }
-  copyRecipeLink(id);
+  try{
+    const r=findRecipe(id); if(!r)return;
+    const url=recipeLink(id);
+    if(navigator.share){
+      try{ await navigator.share({title:r.name,text:'Zobacz przepis w Henry\u2019s Table by The Grey Henry Society: '+r.name,url:url}); return; }
+      catch(e){ if(e&&e.name==='AbortError')return; }
+    }
+    copyRecipeLink(id);
+  }catch(e){toast('Błąd udostępniania: '+(e.message||e));}
 }
+
 function calcPortions(){
   const el=document.getElementById('calcW'), out=document.getElementById('calcOut');
   if(!el||!out)return;
@@ -2125,9 +2131,9 @@ function paintDetail(id){
     <div class="dhead thumb ${r.wash}" style="border:none;border-radius:0${r.image?`;background-image:linear-gradient(180deg,rgba(20,28,24,.12),rgba(20,28,24,.58)),url('${r.image}');background-size:cover;background-position:center`:''}">
       <div class="dscrim"></div>
       <img src="${r.wash==='gold'||r.wash==='parch'?MONOG:MONO}" alt="" style="position:absolute;top:64px;right:20px;width:104px;opacity:.13;z-index:1;pointer-events:none" loading="lazy" decoding="async">
-      <div class="circ-btn back" onclick="closeRecipe()" aria-label="Wróć">${ico('arrow')}</div>
-      <div class="circ-btn fav ${fav?'on':''}" id="favBtn" onclick="toggleFav('${id}')" aria-label="Ulubione">${ico('heart')}</div>
-      <div class="circ-btn share" onclick="shareRecipe('${id}')" aria-label="Udostępnij przepis"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="19" height="19"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></div>
+      <button type="button" class="circ-btn back" onclick="closeRecipe()" aria-label="Wróć">${ico('arrow')}</button>
+      <button type="button" class="circ-btn fav ${fav?'on':''}" id="favBtn" onclick="toggleFav('${id}')" aria-label="Ulubione">${ico('heart')}</button>
+      <button type="button" class="circ-btn share" onclick="shareRecipe('${id}')" aria-label="Udostępnij przepis"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="19" height="19"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>
       <div class="dtitle"><span class="badge ${bc}">${bt}</span><div class="eyebrow">${CATS.find(c=>c[0]===r.cat)?CATS.find(c=>c[0]===r.cat)[1]:'Przepis'}</div><h1>${r.name}</h1></div>
     </div>
     <div class="dbody">
@@ -2171,14 +2177,18 @@ function openRecipeFromUrl(){try{const rid=new URLSearchParams(location.search).
 function closeRecipe(){if(history.state&&history.state.gh==='detail'){history.back();}else{hideDetail();}}
 window.addEventListener('popstate',()=>{if($('detail')&&$('detail').classList.contains('open'))hideDetail();});
 async function toggleFav(id){
-  if(!state.user){toast('Zaloguj się, aby zapisywać ulubione');return;}
-  const had=state.favs.has(id);
-  had?state.favs.delete(id):state.favs.add(id);
-  const b=$('favBtn');if(b)b.classList.toggle('on',state.favs.has(id));
-  render();
-  toast(had?'Usunięto z ulubionych':'Dodano do ulubionych');
-  try{if(had){await sb.from('favorites').delete().eq('recipe_id',id);}else{await sb.from('favorites').insert({user_id:state.user.id,recipe_id:id});}}catch(e){}
+  try{
+    if(!state.user){toast('Zaloguj się, aby zapisywać ulubione');return;}
+    const had=state.favs.has(id);
+    had?state.favs.delete(id):state.favs.add(id);
+    const b=$('favBtn');if(b)b.classList.toggle('on',state.favs.has(id));
+    try{render();}catch(e){}
+    if(typeof _detailId!=='undefined'&&_detailId===id){try{paintDetail(id);}catch(e){}}
+    toast(had?'Usunięto z ulubionych':'Dodano do ulubionych');
+    try{if(had){await sb.from('favorites').delete().eq('recipe_id',id);}else{await sb.from('favorites').insert({user_id:state.user.id,recipe_id:id});}}catch(e){}
+  }catch(e){toast('Błąd ulubionych: '+(e.message||e));}
 }
+
 async function addComment(id){
   const inp=$('cInput');if(!inp||!inp.value.trim())return;
   if(!state.user){toast('Zaloguj się, aby komentować');return;}
