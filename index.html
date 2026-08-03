@@ -525,10 +525,7 @@ body.t-light .brandbar{flex-direction:column;align-items:center;gap:10px}
 body.t-light .brandbar::after{content:"";width:42px;height:1px;background:linear-gradient(90deg,transparent,rgba(143,127,72,.6),transparent)}.rate{display:flex;gap:8px;margin:2px 0 8px}.rstar{background:none;border:none;padding:2px;font-size:24px;line-height:1;color:rgba(42,52,49,.22);cursor:pointer;transition:color .15s,transform .1s}.rstar.on{color:var(--gold)}.rstar:active{transform:scale(.9)}.onboard{display:flex;align-items:center;gap:14px;background:linear-gradient(180deg,#fff,#fbf7ee);border:1px solid var(--line);border-left:3px solid #BFB178;border-radius:14px;padding:14px 16px;cursor:pointer}
 .onboard .ob-i{width:40px;height:40px;border-radius:50%;background:#2A3431;color:#F4EEE1;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
 .onboard b{font-size:15px}.onboard p{font-size:12.5px;color:#6B7771;margin-top:2px}
-.portioncalc{background:linear-gradient(180deg,#2f3b36,#222d29);color:#F4EEE1;border-radius:16px;padding:16px 18px;margin:14px 0 6px}
-.portioncalc .pc-h{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#BFB178;display:flex;align-items:center;gap:8px}
-.portioncalc .pc-v{font-family:var(--serif);font-size:26px;margin:6px 0 4px}
-.portioncalc p{font-size:12px;color:#c7cfc8;line-height:1.6}.brandbar{position:relative}
+.brandbar{position:relative}
 .bell{position:absolute;right:16px;top:50%;transform:translateY(-50%);width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:rgba(255,255,255,.7);color:var(--ink);display:flex;align-items:center;justify-content:center;cursor:pointer}
 .bell .bdot{position:absolute;top:-3px;right:-3px;min-width:17px;height:17px;padding:0 4px;border-radius:9px;background:#b4452f;color:#fff;font-size:10px;font-family:var(--sans);font-weight:700;display:flex;align-items:center;justify-content:center}
 .markall{margin-left:auto;background:none;border:0;color:var(--gold);font-family:var(--sans);font-size:12.5px;cursor:pointer;text-decoration:underline}
@@ -2192,7 +2189,6 @@ function paintDetail(id){
       <p class="lead">${r.desc}</p>
       <h3>Składniki <span style="font-size:12px;color:#8a9189;font-family:var(--sans)">· ${r.portion}</span></h3>
       ${loading?dload('Ładowanie składników…'):r.ing.map(i=>`<div class="ing"><span>${i[0]}</span><span>${i[1]}</span></div>`).join('')}
-      ${(()=>{const d=state.dogs&&state.dogs[0];const w=d?parseFloat(String(d.weight||'').replace(',','.')):0;if(!w)return '';const g=Math.round(w*25);return `<div class="portioncalc"><div class="pc-h">${ico('user')} Porcja dla ${escH(d.name)} (${w} kg)</div><div class="pc-v">≈ ${g} g dziennie</div><p>Szacunek dla dorosłego psa (~2,5% masy ciała) — podziel na 2 posiłki. Szczenięta i psy aktywne potrzebują więcej; dawkę potwierdź z weterynarzem.</p></div>`;})()}
       ${isStaff()?`<div class="foodcalc">
         <div class="fc-badge">Wersja testowa · widoczna tylko dla zespołu</div>
         <h3 style="margin:0 0 4px">Na ile porcji wystarczy ten przepis?</h3>
