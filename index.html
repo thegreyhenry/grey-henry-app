@@ -165,6 +165,8 @@ svg{display:block}
 .dhead .fav{right:18px;color:var(--gold)}
 .dhead .fav.on{background:var(--gold);color:var(--forest);border-color:var(--gold)}
 .dhead .fav.on svg{fill:currentColor}
+.dhead .share{right:66px;color:var(--gold)}
+@media (hover:hover){.dhead .share:hover{border-color:var(--gold);background:rgba(191,177,120,.15)}}
 .dtitle{position:relative;z-index:2}
 .dtitle .badge{position:static;display:inline-block;margin-bottom:12px}
 .dtitle h1{font-family:var(--serif);font-size:30px;font-weight:600;line-height:1.08;margin-top:6px}
@@ -2012,6 +2014,21 @@ async function openRecipe(id){
   else{try{history.pushState({gh:'detail',r:id},'',_rurl);}catch(e){}}
   if(!r.detail){await ensureRecipeDetail(id); if(_detailId===id)paintDetail(id);}
 }
+function recipeLink(id){return location.origin+location.pathname+'?r='+id;}
+async function copyRecipeLink(id){
+  const url=recipeLink(id);
+  try{ await navigator.clipboard.writeText(url); toast('Skopiowano link do przepisu ✓'); return; }catch(e){}
+  try{ const ta=document.createElement('textarea');ta.value=url;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.focus();ta.select();const ok=document.execCommand('copy');ta.remove();toast(ok?'Skopiowano link ✓':('Skopiuj ręcznie: '+url)); }catch(e){ toast('Skopiuj ręcznie: '+url); }
+}
+async function shareRecipe(id){
+  const r=findRecipe(id); if(!r)return;
+  const url=recipeLink(id);
+  if(navigator.share){
+    try{ await navigator.share({title:r.name+' — Henry\u2019s Table',text:'Zobacz przepis \u201E'+r.name+'\u201D w Henry\u2019s Table by The Grey Henry Society',url}); return; }
+    catch(e){ if(e&&e.name==='AbortError')return; }
+  }
+  copyRecipeLink(id);
+}
 function calcPortions(){
   const el=document.getElementById('calcW'), out=document.getElementById('calcOut');
   if(!el||!out)return;
@@ -2047,6 +2064,7 @@ function paintDetail(id){
       <img src="${r.wash==='gold'||r.wash==='parch'?MONOG:MONO}" alt="" style="position:absolute;top:64px;right:20px;width:104px;opacity:.13;z-index:1;pointer-events:none" loading="lazy" decoding="async">
       <div class="circ-btn back" onclick="closeRecipe()" aria-label="Wróć">${ico('arrow')}</div>
       <div class="circ-btn fav ${fav?'on':''}" id="favBtn" onclick="toggleFav('${id}')" aria-label="Ulubione">${ico('heart')}</div>
+      <div class="circ-btn share" onclick="shareRecipe('${id}')" aria-label="Udostępnij przepis"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="19" height="19"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></div>
       <div class="dtitle"><span class="badge ${bc}">${bt}</span><div class="eyebrow">${CATS.find(c=>c[0]===r.cat)?CATS.find(c=>c[0]===r.cat)[1]:'Przepis'}</div><h1>${r.name}</h1></div>
     </div>
     <div class="dbody">
