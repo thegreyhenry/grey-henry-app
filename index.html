@@ -2189,11 +2189,10 @@ function paintDetail(id){
       <p class="lead">${r.desc}</p>
       <h3>Składniki <span style="font-size:12px;color:#8a9189;font-family:var(--sans)">· ${r.portion}</span></h3>
       ${loading?dload('Ładowanie składników…'):r.ing.map(i=>`<div class="ing"><span>${i[0]}</span><span>${i[1]}</span></div>`).join('')}
-      ${isStaff()?`<div class="foodcalc">
-        <div class="fc-badge">Wersja testowa · widoczna tylko dla zespołu</div>
+      <div class="foodcalc">
         <h3 style="margin:0 0 4px">Na ile porcji wystarczy ten przepis?</h3>
         <div id="calcBody"></div>
-      </div>`:''}
+      </div>
       <h3>Przygotowanie</h3>
       ${loading?dload('Ładowanie kroków…'):r.steps.map((s,n)=>`<div class="step"><div class="n">${n+1}</div><p>${s}</p></div>`).join('')}
       ${(r.good&&r.good.length)||(r.bad&&r.bad.length)?`<h3>Dla jakich psów</h3>
@@ -2209,7 +2208,7 @@ function paintDetail(id){
       <div class="cbox"><input id="cInput" placeholder="Napisz komentarz…" onkeydown="if(event.key==='Enter')addComment('${id}')"><button onclick="addComment('${id}')" aria-label="Wyślij">${ico('send')}</button></div>
       <p class="disclaim">Wartości odżywcze i porcje są orientacyjne i nie zastępują konsultacji z lekarzem weterynarii ani dietetykiem zwierzęcym.</p>
     </div>`;
-  if(isStaff()){try{calcInit();}catch(e){}}
+  try{calcInit();}catch(e){}
 }
 function hideDetail(){_detailId=null;$('detail').classList.remove('open');try{if(location.search)history.replaceState(history.state,'',location.pathname);}catch(e){}}
 function openRecipeFromUrl(){try{const rid=new URLSearchParams(location.search).get('r');if(rid&&findRecipe(rid))openRecipe(rid);}catch(e){}}
