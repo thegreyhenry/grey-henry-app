@@ -757,6 +757,26 @@ body.t-light .fc-big b{color:var(--gold2)}
 .fc-msg{font-size:14px;line-height:1.6;margin-bottom:8px}
 .fc-tip{font-size:12.5px;color:#8a968f;line-height:1.5}
 .fc-err{font-size:13px;color:#cf9075}
+.fc-dogrow{display:flex;align-items:center;gap:12px;margin:10px 0 4px;flex-wrap:wrap}
+.fc-dogava{width:46px;height:46px;border-radius:14px;flex:0 0 auto;background:linear-gradient(150deg,var(--gold),#a8975c);background-size:cover;background-position:center;display:grid;place-items:center;font-family:var(--serif);font-size:20px;color:var(--forest);box-shadow:0 8px 18px -10px rgba(143,127,72,.8)}
+.fc-dogtxt{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
+.fc-dogtxt b{font-size:14px;font-weight:600}
+.fc-dogtxt span{font-size:12px;color:#8a968f}
+.fc-edit{flex:0 0 auto;display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(191,177,120,.4);background:transparent;color:var(--gold);border-radius:999px;padding:8px 13px;font-family:var(--sans);font-size:12px;cursor:pointer;transition:background .15s,border-color .15s}
+.fc-edit:hover{background:rgba(191,177,120,.12);border-color:var(--gold)}
+.fc-edit svg{width:13px;height:13px}
+body.t-light .fc-edit{color:var(--gold2);border-color:rgba(143,127,72,.45)}
+.fc-dogchips{margin:10px 0 2px}
+.fc-backauto{display:inline-flex;align-items:center;gap:6px;background:none;border:none;color:var(--gold);font-family:var(--sans);font-size:12.5px;cursor:pointer;padding:8px 2px;text-decoration:underline;text-underline-offset:3px;text-decoration-color:rgba(191,177,120,.5)}
+body.t-light .fc-backauto{color:var(--gold2)}
+.fc-inputwrap{position:relative;max-width:230px;margin:4px 0 2px}
+.fc-inputwrap input{width:100%;background:rgba(28,36,32,.5);border:1.5px solid rgba(191,177,120,.5);border-radius:16px;padding:15px 54px 15px 18px;font-family:var(--serif);font-size:24px;font-weight:500;color:var(--ivory);outline:none;box-shadow:inset 0 2px 6px rgba(0,0,0,.25);transition:border-color .18s,box-shadow .18s}
+.fc-inputwrap input::placeholder{font-family:var(--sans);font-size:15px;font-weight:300;color:#8a968f}
+.fc-inputwrap input:focus{border-color:var(--gold);box-shadow:0 0 0 4px rgba(191,177,120,.2),inset 0 2px 6px rgba(0,0,0,.2)}
+.fc-inputwrap .unit{position:absolute;right:16px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--gold);font-weight:600;letter-spacing:.08em;pointer-events:none}
+body.t-light .fc-inputwrap input{background:#fff;color:#23302B;border-color:rgba(143,127,72,.45);box-shadow:inset 0 2px 5px rgba(90,80,50,.12)}
+body.t-light .fc-inputwrap input:focus{border-color:var(--gold2);box-shadow:0 0 0 4px rgba(143,127,72,.16)}
+body.t-light .fc-inputwrap .unit{color:var(--gold2)}
 #regConsentRow a{color:var(--gold);font-weight:500;text-decoration:underline;text-underline-offset:2px;text-decoration-thickness:1px;text-decoration-color:rgba(191,177,120,.55)}
 #regConsentRow a:hover{text-decoration-color:var(--gold)}
 
@@ -2098,29 +2118,54 @@ async function shareRecipe(id){
   }catch(e){toast('Błąd udostępniania: '+(e.message||e));}
 }
 
-function calcPortions(){
-  const el=document.getElementById('calcW'), out=document.getElementById('calcOut');
-  if(!el||!out)return;
-  if(!el.value.trim()){out.innerHTML='';return;}
-  const raw=el.value.replace(',','.').replace(/[^0-9.]/g,'');
-  const w=parseFloat(raw);
-  if(!(w>0)){out.innerHTML='<p class="fc-err">Podaj wagę psa większą od zera.</p>';return;}
+let calcManual=false, calcDogIdx=0;
+function calcDogW(d){const m=String((d&&d.weight)||'').replace(',','.').match(/[\d.]+/);const w=m?parseFloat(m[0]):0;return w>0?w:0;}
+function calcDogs(){return (state.dogs||[]).filter(d=>calcDogW(d)>0);}
+function calcOutHTML(w){
+  if(!(w>0))return '<p class="fc-err">Podaj wagę psa większą od zera.</p>';
   const YIELD=2000, PERKG=40;
-  const daily=w*PERKG;
-  const portions=YIELD/daily;
-  const full=Math.floor(portions);
-  const remaining=YIELD-full*daily;
-  const dailyR=Math.round(daily/10)*10;
-  const remR=Math.round(remaining);
-  const whole=remR<1;
+  const daily=w*PERKG, portions=YIELD/daily, full=Math.floor(portions);
+  const remaining=YIELD-full*daily, dailyR=Math.round(daily/10)*10, remR=Math.round(remaining), whole=remR<1;
   const plPor=n=>n===1?'pełną porcję dzienną':((n%10>=2&&n%10<=4&&(n%100<10||n%100>=20))?'pełne porcje dzienne':'pełnych porcji dziennych');
   const plDni=n=>n===1?'dzień':'dni';
   const daysTxt=whole?('na '+full+' '+plDni(full)):('na około '+portions.toFixed(1).replace('.',',')+' dnia');
   const extra=(!whole&&remR>=1)?(' oraz około '+remR+' g dodatkowej porcji'):'';
-  out.innerHTML=`<div class="fc-big"><b>${dailyR} g</b><span>dzienna porcja Twojego psa</span></div>
+  return `<div class="fc-big"><b>${dailyR} g</b><span>dzienna porcja</span></div>
     <p class="fc-msg">Z tego przepisu przygotujesz <b>${full} ${plPor(full)}</b>${extra}. Łącznie przepis wystarczy <b>${daysTxt}</b>.</p>
     <p class="fc-tip">Po ugotowaniu odważ porcje, zostaw porcję na najbliższy dzień, a pozostałe zamroź.</p>`;
 }
+function calcInit(){const ds=calcDogs();calcManual=!ds.length;if(calcDogIdx>=ds.length)calcDogIdx=0;calcRender();}
+function calcRender(){
+  const box=document.getElementById('calcBody'); if(!box)return;
+  const ds=calcDogs();
+  if(!calcManual&&ds.length){
+    const i=Math.min(calcDogIdx,ds.length-1), d=ds[i], w=calcDogW(d);
+    box.innerHTML=`<div class="fc-dogrow">
+      <div class="fc-dogava"${d.photo?` style="background-image:url('${d.photo}')"`:''}>${d.photo?'':escH((d.name||'?').charAt(0).toUpperCase())}</div>
+      <div class="fc-dogtxt"><b>Porcje przeliczone dla: ${escH(d.name)}</b><span>${String(w).replace('.',',')} kg · dane z profilu psa</span></div>
+      <button type="button" class="fc-edit" onclick="calcManualOn()">${ico('edit')} Wpisz ręcznie</button>
+    </div>
+    ${ds.length>1?`<div class="segchips fc-dogchips">${ds.map((x,n)=>`<button type="button" class="segchip ${n===i?'active':''}" onclick="calcPickDog(${n})">${escH(x.name)}</button>`).join('')}</div>`:''}
+    <div class="fc-out">${calcOutHTML(w)}</div>`;
+  } else {
+    const pre=ds.length?String(calcDogW(ds[Math.min(calcDogIdx,ds.length-1)])).replace('.',','):'';
+    box.innerHTML=`<label class="fc-lbl" for="calcW">Ile waży Twój pies?</label>
+    <div class="fc-inputwrap"><input id="calcW" inputmode="decimal" autocomplete="off" placeholder="np. 18,5" value="${pre}" oninput="calcPortions()"><span class="unit">kg</span></div>
+    ${ds.length?`<button type="button" class="fc-backauto" onclick="calcAutoOn()">Przelicz z profilu psa</button>`:''}
+    <div id="calcOut" class="fc-out">${pre?calcOutHTML(parseFloat(pre.replace(',','.'))):''}</div>`;
+  }
+}
+function calcManualOn(){calcManual=true;calcRender();setTimeout(()=>{const el=document.getElementById('calcW');if(el){el.focus();if(el.select)el.select();}},60);}
+function calcAutoOn(){calcManual=false;calcRender();}
+function calcPickDog(i){calcDogIdx=i;calcRender();}
+function calcPortions(){
+  const el=document.getElementById('calcW'), out=document.getElementById('calcOut');
+  if(!el||!out)return;
+  if(!el.value.trim()){out.innerHTML='';return;}
+  const w=parseFloat(el.value.replace(',','.').replace(/[^0-9.]/g,''));
+  out.innerHTML=calcOutHTML(w);
+}
+
 function paintDetail(id){
   const r=findRecipe(id); if(!r)return; const fav=state.favs.has(id);
   const [bc,bt]=BADGE[r.badge];
@@ -2151,9 +2196,7 @@ function paintDetail(id){
       ${isStaff()?`<div class="foodcalc">
         <div class="fc-badge">Wersja testowa · widoczna tylko dla zespołu</div>
         <h3 style="margin:0 0 4px">Na ile porcji wystarczy ten przepis?</h3>
-        <label class="fc-lbl">Ile waży Twój pies?</label>
-        <div class="inputunit fc-input"><input id="calcW" inputmode="decimal" autocomplete="off" placeholder="np. 18,5" value="${(state.dogs&&state.dogs[0])?String(state.dogs[0].weight||'').replace(/[^0-9.,]/g,''):''}" oninput="calcPortions()"><span class="unit">kg</span></div>
-        <div id="calcOut" class="fc-out"></div>
+        <div id="calcBody"></div>
       </div>`:''}
       <h3>Przygotowanie</h3>
       ${loading?dload('Ładowanie kroków…'):r.steps.map((s,n)=>`<div class="step"><div class="n">${n+1}</div><p>${s}</p></div>`).join('')}
@@ -2170,7 +2213,7 @@ function paintDetail(id){
       <div class="cbox"><input id="cInput" placeholder="Napisz komentarz…" onkeydown="if(event.key==='Enter')addComment('${id}')"><button onclick="addComment('${id}')" aria-label="Wyślij">${ico('send')}</button></div>
       <p class="disclaim">Wartości odżywcze i porcje są orientacyjne i nie zastępują konsultacji z lekarzem weterynarii ani dietetykiem zwierzęcym.</p>
     </div>`;
-  if(isStaff()){try{calcPortions();}catch(e){}}
+  if(isStaff()){try{calcInit();}catch(e){}}
 }
 function hideDetail(){_detailId=null;$('detail').classList.remove('open');try{if(location.search)history.replaceState(history.state,'',location.pathname);}catch(e){}}
 function openRecipeFromUrl(){try{const rid=new URLSearchParams(location.search).get('r');if(rid&&findRecipe(rid))openRecipe(rid);}catch(e){}}
