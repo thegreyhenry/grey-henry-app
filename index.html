@@ -774,6 +774,16 @@ body.t-light .fc-backauto{color:var(--gold2)}
 body.t-light .fc-inputwrap input{background:#fff;color:#23302B;border-color:rgba(143,127,72,.45);box-shadow:inset 0 2px 5px rgba(90,80,50,.12)}
 body.t-light .fc-inputwrap input:focus{border-color:var(--gold2);box-shadow:0 0 0 4px rgba(143,127,72,.16)}
 body.t-light .fc-inputwrap .unit{color:var(--gold2)}
+.fc-pot{margin:2px 0 12px}
+.fc-potbar{display:flex;gap:3px;height:28px}
+.fc-potbar .seg{border-radius:8px;background:linear-gradient(150deg,#CDBF86,var(--gold) 70%);box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 4px 10px -6px rgba(143,127,72,.6);display:grid;place-items:center;font-family:var(--sans);font-size:12px;font-weight:600;color:var(--forest);min-width:8px}
+.fc-potbar .seg.part{background:repeating-linear-gradient(45deg,rgba(191,177,120,.5) 0 7px,rgba(191,177,120,.22) 7px 14px);border:1.5px dashed rgba(191,177,120,.65);box-shadow:none}
+.fc-potcap{font-size:11.5px;color:#8a968f;margin-top:7px;letter-spacing:.02em}
+body.t-light .fc-potcap{color:#7a857c}
+.fc-planbtn{display:flex;width:100%;justify-content:center;align-items:center;gap:8px;margin-top:14px;padding:13px;border-radius:14px;border:1.5px solid rgba(191,177,120,.5);background:rgba(191,177,120,.1);color:var(--gold);font-family:var(--sans);font-size:13.5px;font-weight:600;cursor:pointer;transition:background .15s,color .15s}
+.fc-planbtn:hover{background:var(--gold);color:var(--forest)}
+body.t-light .fc-planbtn{background:#fff;color:var(--gold2);border-color:rgba(143,127,72,.45)}
+body.t-light .fc-planbtn:hover{background:var(--green);border-color:var(--green);color:#fff}
 #regConsentRow a{color:var(--gold);font-weight:500;text-decoration:underline;text-underline-offset:2px;text-decoration-thickness:1px;text-decoration-color:rgba(191,177,120,.55)}
 #regConsentRow a:hover{text-decoration-color:var(--gold)}
 
@@ -2127,9 +2137,32 @@ function calcOutHTML(w){
   const plDni=n=>n===1?'dzień':'dni';
   const daysTxt=whole?('na '+full+' '+plDni(full)):('na około '+portions.toFixed(1).replace('.',',')+' dnia');
   const extra=(!whole&&remR>=1)?(' oraz około '+remR+' g dodatkowej porcji'):'';
+  let pot='';
+  if(full>=1&&full<=10){
+    pot='<div class="fc-pot"><div class="fc-potbar">'+Array(full).fill('<span class="seg" style="flex:'+daily+' 1 0"></span>').join('')+(remR>=1?'<span class="seg part" style="flex:'+remaining+' 1 0"></span>':'')+'</div><div class="fc-potcap">Garnek 2000 g = '+full+' × '+dailyR+' g'+(remR>=1?' + '+remR+' g':'')+'</div></div>';
+  } else if(full>10){
+    pot='<div class="fc-pot"><div class="fc-potbar"><span class="seg" style="flex:1">'+full+' porcji</span></div><div class="fc-potcap">Garnek 2000 g = '+full+' × '+dailyR+' g'+(remR>=1?' + '+remR+' g':'')+'</div></div>';
+  }
+  const nDays=Math.min(full,7);
+  const planBtn=full>=1?('<button type="button" class="fc-planbtn" onclick="planForDays('+nDays+')">Dodaj do planera na '+nDays+' '+plDni(nDays)+'</button>'):'';
   return `<div class="fc-big"><b>${dailyR} g</b><span>dzienna porcja</span></div>
+    ${pot}
     <p class="fc-msg">Z tego przepisu przygotujesz <b>${full} ${plPor(full)}</b>${extra}. Łącznie przepis wystarczy <b>${daysTxt}</b>.</p>
-    <p class="fc-tip">Po ugotowaniu odważ porcje, zostaw porcję na najbliższy dzień, a pozostałe zamroź.</p>`;
+    <p class="fc-tip">Po ugotowaniu odważ porcje, zostaw porcję na najbliższy dzień, a pozostałe zamroź.</p>
+    ${planBtn}`;
+}
+async function planForDays(n){
+  if(!state.user){toast('Zaloguj się, aby planować');return;}
+  const id=(typeof _detailId!=='undefined'&&_detailId)?_detailId:null; if(!id)return;
+  const dates=weekDates(); const added=[];
+  for(let k=0;k<state.plan.length&&added.length<n;k++){ if(!state.plan[k][1]){state.plan[k][1]=id;added.push(k);} }
+  if(!added.length){toast('Plan na ten tydzień jest pełny');return;}
+  hideDetail();
+  if(history.state&&history.state.gh==='detail'){try{history.replaceState({},'');}catch(e){}}
+  state.tab='planner';render();
+  const sc=$('screen');if(sc)sc.scrollTop=0;
+  toast('Dodano do planera na '+added.length+' '+(added.length===1?'dzień':'dni')+(added.length<n?' (tyle było wolnych miejsc)':''));
+  for(const i of added){try{await sb.from('meal_plan_entries').delete().eq('owner_id',state.user.id).eq('plan_date',dates[i]).eq('position',0);await sb.from('meal_plan_entries').insert({owner_id:state.user.id,plan_date:dates[i],position:0,recipe_id:id});}catch(e){}}
 }
 function calcInit(){const ds=calcDogs();calcManual=!ds.length;if(calcDogIdx>=ds.length)calcDogIdx=0;calcRender();}
 function calcRender(){
