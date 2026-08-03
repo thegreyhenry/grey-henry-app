@@ -4,15 +4,15 @@
    - Same-origin static assets (icons, logos, manifest): cache-first
    - Cross-origin (Supabase API, CDNs, fonts): bypass entirely — never cached, so data/auth stay fresh
 */
-const VERSION = 'gh-v11';
+const VERSION = 'gh-v12';
 const SHELL = [
   './',
   './index.html',
   './manifest.webmanifest',
-  './logo/crest_green.png',
-  './logo/crest_ivory.png',
-  './logo/mono_gold.png',
-  './logo/mono_ivory.png',
+  './logo/molly_green.png',
+  './logo/molly_ivory.png',
+  './logo/molly_head_gold.png',
+  './logo/molly_head_ivory.png',
   './logo/icon-192.png',
   './logo/icon-512.png',
   './logo/apple-touch-icon.png'
