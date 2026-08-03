@@ -830,6 +830,69 @@ body.t-light .nav button.active::after{background:rgba(42,52,49,.08)}
   .pushgate-box{max-width:380px}
 }
 
+
+/* ====== LUXE v2 — pola i sekcje ====== */
+/* logowanie */
+.login input{border-radius:14px;padding:15px 16px;font-size:14.5px;border:1.5px solid rgba(42,52,49,.16);box-shadow:inset 0 1px 2px rgba(42,52,49,.04);transition:border-color .18s,box-shadow .18s}
+.login input:focus{border-color:var(--gold2);box-shadow:0 0 0 4px rgba(143,127,72,.14)}
+.authtabs{border-radius:999px;padding:5px}
+.authtab{border-radius:999px;padding:11px}
+.authtab.active{box-shadow:0 6px 16px -8px rgba(42,52,49,.4)}
+
+/* pola formularzy w aplikacji */
+.field input,.field textarea,.field select{background:linear-gradient(180deg,rgba(244,238,225,.11),rgba(244,238,225,.07));box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
+.field input:focus,.field textarea:focus,.field select:focus{background:rgba(244,238,225,.14)}
+body.t-light .field input,body.t-light .field textarea,body.t-light .field select{background:#fff;box-shadow:inset 0 1px 2px rgba(42,52,49,.05)}
+
+/* kalkulator porcji — wizytówka */
+.foodcalc{position:relative;overflow:hidden;padding:22px 20px 20px;border-radius:22px;border:1.5px solid rgba(191,177,120,.45);background:linear-gradient(150deg,rgba(191,177,120,.15),rgba(191,177,120,.04) 55%),linear-gradient(180deg,rgba(244,238,225,.05),rgba(244,238,225,.02));box-shadow:0 18px 40px -28px rgba(0,0,0,.55)}
+.foodcalc::before{content:"";position:absolute;top:-70px;right:-70px;width:230px;height:230px;border-radius:50%;background:radial-gradient(circle,rgba(191,177,120,.3),transparent 70%);pointer-events:none}
+body.t-light .foodcalc{background:linear-gradient(160deg,#fffdf7,#f6efdd);border-color:rgba(143,127,72,.4);box-shadow:0 20px 44px -30px rgba(90,80,50,.4)}
+.foodcalc h3{font-size:20px}
+.fc-lbl{font-size:14px}
+.fc-input input{font-size:17px;font-weight:500}
+.fc-big{padding:15px 18px;border-radius:16px;background:rgba(28,36,32,.4);border:1px solid rgba(191,177,120,.28);margin:6px 0 12px}
+body.t-light .fc-big{background:#fff;border-color:rgba(143,127,72,.25);box-shadow:0 10px 24px -18px rgba(90,80,50,.35)}
+.fc-big b{font-size:36px;background:linear-gradient(120deg,#d8c88f,var(--gold) 55%,#a8975c);-webkit-background-clip:text;background-clip:text;color:transparent}
+body.t-light .fc-big b{background:linear-gradient(120deg,#8F7F48,#655934);-webkit-background-clip:text;background-clip:text;color:transparent}
+.fc-msg{font-size:14.5px}
+
+/* metryki w przepisie */
+.metric-row{border-radius:18px;padding:18px 6px;background:linear-gradient(180deg,#fff,#faf5ea);border-color:rgba(143,127,72,.22);box-shadow:0 12px 28px -22px rgba(90,80,50,.35)}
+.metric+.metric{border-left:1px solid rgba(42,52,49,.08)}
+.metric b{font-size:19px}
+
+/* składniki i kroki */
+.ing{border-bottom:1px dashed rgba(42,52,49,.16)}
+.ing span:last-child{color:var(--gold2);font-weight:600;font-size:13.5px}
+.step .n{background:linear-gradient(150deg,var(--gold),#a8975c);color:var(--forest);border:none;box-shadow:0 8px 18px -10px rgba(143,127,72,.7);font-weight:600}
+
+/* komentarze / dziennik — pola wysyłki */
+.cbox input,.jbox input{border-radius:999px;padding:14px 19px;font-size:13.5px;border-width:1.5px}
+.cbox input:focus{box-shadow:0 0 0 4px rgba(143,127,72,.12)}
+.jbox input:focus{box-shadow:0 0 0 4px rgba(191,177,120,.14)}
+.cbox button{border-radius:50%;width:48px;height:48px;background:linear-gradient(150deg,var(--green),#1e2925);box-shadow:0 10px 22px -12px rgba(42,52,49,.7);transition:transform .14s}
+.jbox button{border-radius:50%;width:48px;height:48px;border-width:1.5px;transition:transform .14s,border-color .14s}
+.jbox button:hover{border-color:var(--gold)}
+.cbox button:active,.jbox button:active{transform:scale(.93)}
+.comment .av{background:linear-gradient(150deg,var(--gold),#a8975c);color:var(--forest);font-weight:600}
+
+/* oceny */
+.rstar{font-size:30px}
+@media (hover:hover){.rstar:hover{transform:scale(1.15)}}
+
+/* planer */
+.daytag{background:linear-gradient(160deg,rgba(191,177,120,.22),rgba(191,177,120,.08));border:1px solid rgba(191,177,120,.28);border-radius:16px}
+.dayslot{border-radius:16px;background:rgba(244,238,225,.04)}
+.dayslot:not(.empty){box-shadow:0 10px 24px -20px rgba(0,0,0,.45)}
+.dayslot.empty{border-color:rgba(191,177,120,.4);background:rgba(191,177,120,.04)}
+body.t-light .dayslot:not(.empty){background:#fff;box-shadow:0 10px 24px -20px rgba(90,80,50,.3)}
+body.t-light .dayslot.empty{background:transparent}
+
+/* menu ustawień */
+.menu-item{padding:16px 10px}
+@media (hover:hover){.menu-item:hover{background:rgba(191,177,120,.07)}}
+
 body.t-light #regConsentRow a{color:var(--gold2);text-decoration-color:rgba(143,127,72,.5)}
 </style>
 </head>
