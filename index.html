@@ -784,6 +784,27 @@ body.t-light .fc-potcap{color:#7a857c}
 .fc-planbtn:hover{background:var(--gold);color:var(--forest)}
 body.t-light .fc-planbtn{background:#fff;color:var(--gold2);border-color:rgba(143,127,72,.45)}
 body.t-light .fc-planbtn:hover{background:var(--green);border-color:var(--green);color:#fff}
+
+/* ===== iOS: koniec automatycznego przybliżania po kliknięciu pola =====
+   Safari na iPhonie przybliża ekran, gdy pole ma czcionkę < 16px.
+   Po przybliżeniu układ "wychodzi" za obszar i trzeba zsuwać palcami.
+   Rozwiązanie: na urządzeniach dotykowych każde pole ma min. 16px. */
+@media (max-width:1023px){
+  input[type=text],input[type=email],input[type=password],input[type=search],
+  input[type=number],input[type=tel],input[type=url],input:not([type]),
+  textarea,select,
+  .searchwrap input,.field input,.field textarea,.field select,.login input,
+  .cbox input,.jbox input,.shopadd input,.ingrow input,.ingrow select,
+  .steprow textarea,.sortsel{font-size:16px !important}
+  .fc-field input{font-size:26px !important}
+}
+/* wyśrodkowanie ikon w wyszukiwarce niezależnie od wysokości pola */
+.searchwrap>svg{top:50%;transform:translateY(-50%)}
+.searchwrap .clr{top:50%;transform:translateY(-50%)}
+/* twarde zabezpieczenie przed wychodzeniem treści w poziomie */
+html,body{max-width:100%;overflow-x:hidden}
+.screen{overflow-x:hidden}
+.searchwrap,.searchwrap input{max-width:100%}
 #regConsentRow a{color:var(--gold);font-weight:500;text-decoration:underline;text-underline-offset:2px;text-decoration-thickness:1px;text-decoration-color:rgba(191,177,120,.55)}
 #regConsentRow a:hover{text-decoration-color:var(--gold)}
 
