@@ -805,6 +805,17 @@ body.t-light .fc-planbtn:hover{background:var(--green);border-color:var(--green)
 html,body{max-width:100%;overflow-x:hidden}
 .screen{overflow-x:hidden}
 .searchwrap,.searchwrap input{max-width:100%}
+.safebar{display:flex;align-items:center;gap:10px;margin-top:10px;padding:10px 12px;border-radius:14px;border:1.5px solid rgba(191,177,120,.4);background:rgba(191,177,120,.08);font-size:12.5px;line-height:1.4}
+.safebar.on{border-color:rgba(58,157,93,.45);background:rgba(58,157,93,.1)}
+.safebar .sb-ic{flex:0 0 auto;display:grid;place-items:center;width:22px;height:22px}
+.safebar .sb-ic svg{width:16px;height:16px}
+.safebar.on .sb-ic{color:#3a9d5d}
+.safebar:not(.on) .sb-ic{color:#c9a227}
+.safebar .sb-tx{flex:1;min-width:0}
+.safebar button{flex:0 0 auto;background:none;border:1px solid rgba(191,177,120,.5);color:var(--gold);border-radius:999px;padding:7px 12px;font-family:var(--sans);font-size:11.5px;font-weight:600;cursor:pointer}
+body.t-light .safebar button{color:var(--gold2);border-color:rgba(143,127,72,.5)}
+.warn.danger{border-color:rgba(200,80,60,.5);background:rgba(200,80,60,.1)}
+.warn.danger .i{color:#c8503c}
 /* NAPRAWA: dluga plakietka ("Przepis uzytkownika") nachodzila na serduszko
    w lewym gornym rogu karty. Plakietka idzie na dol kadru, serce zostaje na gorze. */
 .rcard .badge{top:auto;bottom:10px;right:auto;left:10px;max-width:calc(100% - 20px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:9.5px;letter-spacing:.07em}
@@ -1066,7 +1077,7 @@ let RECIPES=[
 const BADGE={diet:['b-diet','Przepis dietetyka'],verif:['b-verif','Zweryfikowane'],comm:['b-comm','Przepis użytkownika']};
 
 const PAGE=6;
-let state={tab:'home',user:null,profile:null,cat:'all',q:'',sort:'rec',showFilters:false,showCats:false,profileApplied:false,openGroups:new Set(),dogMatch:false,editingDog:null,journalOpen:false,shown:6,_sig:'',flags:new Set(),favs:new Set(),threads:[],activeThread:null,threadReplies:{},communityCompose:false,myRecipes:[],customShop:[],shop:[],notifs:[],favsOpen:false,weightOpen:false,announcements:[],plan:[['Pon',null],['Wt',null],['Śr',null],['Czw',null],['Pt',null],['Sob',null],['Niedz',null]],
+let state={tab:'home',user:null,profile:null,cat:'all',q:'',sort:'rec',showFilters:false,showCats:false,profileApplied:false,openGroups:new Set(),dogMatch:false,editingDog:null,journalOpen:false,shown:6,_sig:'',flags:new Set(),favs:new Set(),safeMode:true,threads:[],activeThread:null,threadReplies:{},communityCompose:false,myRecipes:[],customShop:[],shop:[],notifs:[],favsOpen:false,weightOpen:false,announcements:[],plan:[['Pon',null],['Wt',null],['Śr',null],['Czw',null],['Pt',null],['Sob',null],['Niedz',null]],
   comments:{},
   dogs:[]};
 
@@ -1390,7 +1401,9 @@ function recipeMatchesDog(r,dog){
 function dogProfileFlags(dog){return [];}
 function catMatch(r,c){return c==='all'||r.flags.includes(c)||r.cat===c;}
 const AVOIDMAP=[['kurcz','bez_kurczak'],['wolow','bez_wolowina'],['ryb','bez_ryba'],['jaj','bez_jajko'],['nabia','bez_nabial'],['mlek','bez_nabial'],['lakto','bez_nabial'],['zbo','bez_zboz'],['gluten','bez_gluten'],['ryż','bez_ryz'],['ryz','bez_ryz']];
+function toggleSafeMode(){state.safeMode=!state.safeMode;toast(state.safeMode?'Ochrona włączona — ukrywamy wykluczone składniki':'Pokazujemy wszystkie przepisy');render();}
 function passFilters(r){
+  if(state.safeMode){const d=state.dogs&&state.dogs[0];if(d&&dogAvoid(d).filter(Boolean).length&&!recipeMatchesDog(r,d))return false;}
   for(const f of state.flags){
     if(f==='diet'){if(r.badge!=='diet')return false;}
     else if(f==='verif'){if(r.badge!=='verif')return false;}
@@ -1502,6 +1515,11 @@ function renderRecipes(){
   <div class="pad" style="text-align:center;margin-bottom:8px"><span class="eyebrow">Biblioteka przepisów</span></div>
   <div class="rsticky">
     <div class="pad"><div class="searchwrap">${ico('search')}<input id="search" placeholder="Szukaj nazwy lub składnika…" value="${state.q}" oninput="setQ(this.value)">${state.q?`<button class="clr" onclick="setQ('')" aria-label="Wyczyść">${ico('x')}</button>`:''}</div></div>
+    ${(()=>{const d=state.dogs&&state.dogs[0];const av=d?dogAvoid(d).filter(Boolean):[];if(!av.length)return '';const hidden=RECIPES.filter(r=>!recipeMatchesDog(r,d)).length;return `<div class="pad"><div class="safebar ${state.safeMode?'on':''}">
+      <span class="sb-ic">${ico(state.safeMode?'check':'warn')}</span>
+      <span class="sb-tx">${state.safeMode?`Ukrywamy przepisy z wykluczeniami ${escH(d.name)} <b>(${hidden})</b>`:`Pokazujemy <b>wszystkie</b> przepisy — także z wykluczeniami ${escH(d.name)}`}</span>
+      <button type="button" onclick="toggleSafeMode()">${state.safeMode?'Pokaż wszystkie':'Włącz ochronę'}</button>
+    </div></div>`;})()}
     <div class="toolrow" style="margin-top:10px">
       <select class="sortsel" onchange="setSort(this.value)">${SORTS.map(s=>`<option value="${s[0]}" ${state.sort===s[0]?'selected':''}>Sortuj: ${s[1]}</option>`).join('')}</select>
       <button class="filterbtn ${n||state.showFilters?'on':''}" onclick="toggleFilters()">${ico('filter')} Filtry${n?` <span class="fcount">${n}</span>`:''}</button>
@@ -2278,6 +2296,7 @@ function paintDetail(id){
       <div class="tagline">${(r.good||[]).map(g=>`<span class="fit ok">${ico('check')} ${g}</span>`).join('')}</div>
       <div class="tagline" style="margin-top:8px">${(r.bad||[]).map(b=>`<span class="fit no">${ico('x')} ${b}</span>`).join('')}</div>`:''}
       ${r.warn?`<div class="warn"><span class="i">${ico('warn')}</span><p>${r.warn}</p></div>`:''}
+      ${(()=>{const d=state.dogs&&state.dogs[0];if(!d||recipeMatchesDog(r,d))return '';const names=(r.ing||[]).map(i=>(i[0]||'').toLowerCase());const hits=dogAvoid(d).filter(Boolean).filter(a=>{const t=exclTerms(a);return names.some(n=>t.some(x=>x&&n.includes(x)))||names.some(n=>n.includes(a));}).map(a=>{const e=EXCL.find(x=>x[0]===a);return e?e[1]:a;});return `<div class="warn danger"><span class="i">${ico('warn')}</span><p><b>Uwaga — niezgodne z profilem ${escH(d.name)}.</b> Ten przepis zawiera: ${escH(hits.join(', ')||'wykluczony składnik')}.</p></div>`;})()}
       ${risky.length?`<div class="warn danger"><span class="i">${ico('warn')}</span><p>Automatyczne ostrzeżenie: wykryto składnik wymagający ostrożności (${risky.join(', ')}). Sprawdź, czy jest bezpieczny dla Twojego psa.</p></div>`:''}
       <button class="btn btn-gold" style="width:100%;margin-top:22px" onclick="addToPlan('${id}')">Dodaj do planera</button>
       <h3>Twoja ocena</h3>
