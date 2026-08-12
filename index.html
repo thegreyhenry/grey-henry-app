@@ -805,6 +805,9 @@ body.t-light .fc-planbtn:hover{background:var(--green);border-color:var(--green)
 html,body{max-width:100%;overflow-x:hidden}
 .screen{overflow-x:hidden}
 .searchwrap,.searchwrap input{max-width:100%}
+/* NAPRAWA: dluga plakietka ("Przepis uzytkownika") nachodzila na serduszko
+   w lewym gornym rogu karty. Plakietka idzie na dol kadru, serce zostaje na gorze. */
+.rcard .badge{top:auto;bottom:10px;right:auto;left:10px;max-width:calc(100% - 20px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:9.5px;letter-spacing:.07em}
 /* iOS/Android: blokada automatycznego skalowania tekstu */
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 /* Każde urządzenie dotykowe (niezależnie od szerokości ekranu): pola min. 16px,
