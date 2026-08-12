@@ -805,6 +805,17 @@ body.t-light .fc-planbtn:hover{background:var(--green);border-color:var(--green)
 html,body{max-width:100%;overflow-x:hidden}
 .screen{overflow-x:hidden}
 .searchwrap,.searchwrap input{max-width:100%}
+/* iOS/Android: blokada automatycznego skalowania tekstu */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+/* Każde urządzenie dotykowe (niezależnie od szerokości ekranu): pola min. 16px,
+   bo poniżej tej wartości Safari przybliża widok po dotknięciu pola. */
+@media (hover:none) and (pointer:coarse){
+  input,textarea,select,
+  .searchwrap input,.field input,.field textarea,.field select,.login input,
+  .cbox input,.jbox input,.ingrow input,.ingrow select,.steprow textarea,.sortsel,
+  .fc-inputwrap input{font-size:16px !important}
+  .fc-field input,.fc-inputwrap input{font-size:24px !important}
+}
 #regConsentRow a{color:var(--gold);font-weight:500;text-decoration:underline;text-underline-offset:2px;text-decoration-thickness:1px;text-decoration-color:rgba(191,177,120,.55)}
 #regConsentRow a:hover{text-decoration-color:var(--gold)}
 
@@ -831,7 +842,7 @@ body.t-light .section-h a:hover{background:var(--green);color:var(--ivory);borde
 }
 
 /* — wyszukiwarka i przyciski — */
-.searchwrap input{border-radius:999px;padding:16px 44px 16px 46px;background:rgba(244,238,225,.08);border-width:1.5px;font-size:14.5px}
+.searchwrap input{border-radius:999px;padding:16px 44px 16px 46px;background:rgba(244,238,225,.08);border-width:1.5px;font-size:16px}
 .searchwrap input:focus{box-shadow:0 0 0 4px rgba(191,177,120,.16);background:rgba(244,238,225,.11)}
 body.t-light .searchwrap input{background:#fff}
 .btn-gold{background:linear-gradient(135deg,#CDBF86 0%,var(--gold) 45%,#a8975c 100%);box-shadow:0 14px 30px -14px rgba(191,177,120,.75),inset 0 1px 0 rgba(255,255,255,.25)}
