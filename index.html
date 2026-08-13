@@ -818,6 +818,15 @@ body.t-light .safebar button{color:var(--gold2);border-color:rgba(143,127,72,.5)
 .warn.danger .i{color:#c8503c}
 .rcard.unsafe .thumb{outline:2px solid rgba(200,80,60,.55);outline-offset:-2px}
 .unsafe-tag{display:inline-block;font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:#c8503c;border:1px solid rgba(200,80,60,.5);background:rgba(200,80,60,.1);padding:2px 6px;border-radius:999px;margin-left:6px;vertical-align:middle}
+.dogswitch{display:flex;gap:8px;overflow-x:auto;padding:14px 0 2px;scrollbar-width:none}
+.dogswitch::-webkit-scrollbar{display:none}
+.dsw{flex:0 0 auto;display:flex;align-items:center;gap:8px;padding:7px 14px 7px 7px;border-radius:999px;border:1.5px solid var(--line);background:rgba(244,238,225,.05);color:inherit;font-family:var(--sans);font-size:13px;font-weight:500;cursor:pointer;transition:border-color .15s,background .15s}
+.dsw-av{width:28px;height:28px;border-radius:50%;flex:0 0 auto;background:rgba(191,177,120,.2);background-size:cover;background-position:center;display:grid;place-items:center;font-size:12px;font-weight:600;color:var(--gold)}
+.dsw.on{border-color:var(--gold);background:rgba(191,177,120,.14)}
+.dsw.on .dsw-av{background-color:var(--gold);color:var(--forest)}
+body.t-light .dsw{background:#fff}
+body.t-light .dsw.on{border-color:var(--green);background:rgba(42,52,49,.06)}
+body.t-light .dsw.on .dsw-av{background-color:var(--green);color:#fff}
 /* NAPRAWA: dluga plakietka ("Przepis uzytkownika") nachodzila na serduszko
    w lewym gornym rogu karty. Plakietka idzie na dol kadru, serce zostaje na gorze. */
 .rcard .badge{top:auto;bottom:10px;right:auto;left:10px;max-width:calc(100% - 20px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:9.5px;letter-spacing:.07em}
@@ -1079,7 +1088,7 @@ let RECIPES=[
 const BADGE={diet:['b-diet','Przepis dietetyka'],verif:['b-verif','Zweryfikowane'],comm:['b-comm','Przepis użytkownika']};
 
 const PAGE=6;
-let state={tab:'home',user:null,profile:null,cat:'all',q:'',sort:'rec',showFilters:false,showCats:false,profileApplied:false,openGroups:new Set(),dogMatch:false,editingDog:null,journalOpen:false,shown:6,_sig:'',flags:new Set(),favs:new Set(),safeMode:true,threads:[],activeThread:null,threadReplies:{},communityCompose:false,myRecipes:[],customShop:[],shop:[],notifs:[],favsOpen:false,weightOpen:false,announcements:[],plan:[['Pon',null],['Wt',null],['Śr',null],['Czw',null],['Pt',null],['Sob',null],['Niedz',null]],
+let state={tab:'home',user:null,profile:null,cat:'all',q:'',sort:'rec',showFilters:false,showCats:false,profileApplied:false,openGroups:new Set(),dogMatch:false,editingDog:null,journalOpen:false,shown:6,_sig:'',flags:new Set(),favs:new Set(),safeMode:true,dogIdx:0,threads:[],activeThread:null,threadReplies:{},communityCompose:false,myRecipes:[],customShop:[],shop:[],notifs:[],favsOpen:false,weightOpen:false,announcements:[],plan:[['Pon',null],['Wt',null],['Śr',null],['Czw',null],['Pt',null],['Sob',null],['Niedz',null]],
   comments:{},
   dogs:[]};
 
@@ -1150,6 +1159,7 @@ async function loadDogs(){
   const jb={};(js||[]).forEach(j=>{(jb[j.dog_id]=jb[j.dog_id]||[]).push(j);});
   const wb={};(ws||[]).forEach(w=>{(wb[w.dog_id]=wb[w.dog_id]||[]).push(w);});
   state.dogs=(ds||[]).map(d=>mapDog(d,jb[d.id],wb[d.id]));
+  restoreActiveDog();
 }
 async function loadMine(){
   if(!state.user||!sb){state.myRecipes=[];return;}
@@ -1403,12 +1413,20 @@ function recipeMatchesDog(r,dog){
 function dogProfileFlags(dog){return [];}
 function catMatch(r,c){return c==='all'||r.flags.includes(c)||r.cat===c;}
 const AVOIDMAP=[['kurcz','bez_kurczak'],['wolow','bez_wolowina'],['ryb','bez_ryba'],['jaj','bez_jajko'],['nabia','bez_nabial'],['mlek','bez_nabial'],['lakto','bez_nabial'],['zbo','bez_zboz'],['gluten','bez_gluten'],['ryż','bez_ryz'],['ryz','bez_ryz']];
-function safeDog(){const d=state.dogs&&state.dogs[0];return (d&&dogAvoid(d).filter(Boolean).length)?d:null;}
+function activeDog(){const ds=state.dogs||[];if(!ds.length)return null;let i=state.dogIdx||0;if(i<0||i>=ds.length)i=0;return ds[i];}
+function setActiveDog(i){const ds=state.dogs||[];if(i<0||i>=ds.length)return;state.dogIdx=i;try{localStorage.setItem('mt-dog',ds[i].id||String(i));}catch(_){}
+  if(typeof calcDogIdx!=='undefined')calcDogIdx=i;
+  if(state.dogMatch)setProfileFilters();
+  render();toast('Widok dla: '+ds[i].name);}
+function restoreActiveDog(){try{const k=localStorage.getItem('mt-dog');if(!k)return;const ds=state.dogs||[];const i=ds.findIndex(d=>(d.id||'')===k);if(i>=0)state.dogIdx=i;}catch(_){}}
+function dogSwitcherHTML(){const ds=state.dogs||[];if(ds.length<2)return '';const cur=state.dogIdx||0;
+  return `<div class="pad"><div class="dogswitch">${ds.map((d,i)=>`<button type="button" class="dsw ${i===cur?'on':''}" onclick="setActiveDog(${i})"><span class="dsw-av"${d.photo?` style="background-image:url('${d.photo}')"`:''}>${d.photo?'':escH((d.name||'?').charAt(0).toUpperCase())}</span>${escH(d.name)}</button>`).join('')}</div></div>`;}
+function safeDog(){const d=activeDog();return (d&&dogAvoid(d).filter(Boolean).length)?d:null;}
 function safeList(arr){if(!state.safeMode)return arr;const d=safeDog();if(!d)return arr;return arr.filter(r=>recipeMatchesDog(r,d));}
 function isUnsafe(r){const d=safeDog();return !!(d&&!recipeMatchesDog(r,d));}
 function toggleSafeMode(){state.safeMode=!state.safeMode;toast(state.safeMode?'Ochrona włączona — ukrywamy wykluczone składniki':'Pokazujemy wszystkie przepisy');render();}
 function passFilters(r){
-  if(state.safeMode){const d=state.dogs&&state.dogs[0];if(d&&dogAvoid(d).filter(Boolean).length&&!recipeMatchesDog(r,d))return false;}
+  if(state.safeMode){const d=activeDog();if(d&&dogAvoid(d).filter(Boolean).length&&!recipeMatchesDog(r,d))return false;}
   for(const f of state.flags){
     if(f==='diet'){if(r.badge!=='diet')return false;}
     else if(f==='verif'){if(r.badge!=='verif')return false;}
@@ -1444,7 +1462,7 @@ function dogCardHTML(d,i){
 }
 
 function renderHome(){
-  const dog=state.dogs[0];
+  const dog=activeDog();
   const rodRaw=state.recipeOfDay?findRecipe(state.recipeOfDay):null;
   const rod=(rodRaw&&state.safeMode&&isUnsafe(rodRaw))?null:rodRaw;
   const safeAll=safeList(RECIPES);
@@ -1471,6 +1489,7 @@ function renderHome(){
     <div style="margin-top:18px"><button class="btn btn-gold" onclick="openRecipe('${featured.id}')">Zobacz przepis</button></div>
   </div></div>
   ${favList.length?`<div class="section-h pad"><h2>Twoje ulubione</h2><a onclick="go('recipes')">Wszystkie</a></div><div class="rail">${favList.map(r=>recipeCardHTML(r)).join('')}</div>`:''}
+  ${dogSwitcherHTML()}
   ${dog?`<div class="section-h pad"><h2>Dla ${escH(dog.name)}</h2><a onclick="goMatched()">Wszystkie</a></div><div class="rail">${matched.map(r=>recipeCardHTML(r)).join('')}</div>`:''}
   ${colHTML}
   <div class="section-h pad"><h2>Od dietetyków</h2><a onclick="goDietitian()">Więcej</a></div>
@@ -1500,7 +1519,7 @@ function footerHTML(){
 }
 
 function renderRecipes(){
-  const dog=state.dogs[0];
+  const dog=activeDog();
   const favList=RECIPES.filter(r=>state.favs.has(r.id));
   let list=RECIPES.filter(r=>{
     if(state.dogMatch && dog && !recipeMatchesDog(r,dog))return false;
@@ -1522,7 +1541,8 @@ function renderRecipes(){
   <div class="pad" style="text-align:center;margin-bottom:8px"><span class="eyebrow">Biblioteka przepisów</span></div>
   <div class="rsticky">
     <div class="pad"><div class="searchwrap">${ico('search')}<input id="search" placeholder="Szukaj nazwy lub składnika…" value="${state.q}" oninput="setQ(this.value)">${state.q?`<button class="clr" onclick="setQ('')" aria-label="Wyczyść">${ico('x')}</button>`:''}</div></div>
-    ${(()=>{const d=state.dogs&&state.dogs[0];const av=d?dogAvoid(d).filter(Boolean):[];if(!av.length)return '';const hidden=RECIPES.filter(r=>!recipeMatchesDog(r,d)).length;return `<div class="pad"><div class="safebar ${state.safeMode?'on':''}">
+    ${dogSwitcherHTML()}
+    ${(()=>{const d=activeDog();const av=d?dogAvoid(d).filter(Boolean):[];if(!av.length)return '';const hidden=RECIPES.filter(r=>!recipeMatchesDog(r,d)).length;return `<div class="pad"><div class="safebar ${state.safeMode?'on':''}">
       <span class="sb-ic">${ico(state.safeMode?'check':'warn')}</span>
       <span class="sb-tx">${state.safeMode?`Ukrywamy przepisy z wykluczeniami ${escH(d.name)} <b>(${hidden})</b>`:`Pokazujemy <b>wszystkie</b> przepisy — także z wykluczeniami ${escH(d.name)}`}</span>
       <button type="button" onclick="toggleSafeMode()">${state.safeMode?'Pokaż wszystkie':'Włącz ochronę'}</button>
@@ -1909,7 +1929,7 @@ function weightChartSVG(ws){
     <div class="wlabels"><span>min ${min} kg</span><span>maks ${max} kg</span></div></div>`;
 }
 async function addWeight(){
-  const d=state.dogs[0];if(!d){toast('Najpierw dodaj profil psa');return;}
+  const d=activeDog();if(!d){toast('Najpierw dodaj profil psa');return;}
   if(!state.user){toast('Zaloguj się, aby zapisać wagę');return;}
   const inp=$('wInput');const v=parseFloat(String(inp&&inp.value||'').replace(',','.'));
   if(!v||v<=0||v>=200){toast('Podaj poprawną wagę w kg');return;}
@@ -1934,13 +1954,13 @@ function renderProfile(){
     ${state.dogs.map((d,i)=>dogCardHTML(d,i)).join('')}
     <div id="dogForm"></div>
 
-    ${state.dogs.length?(()=>{const d=state.dogs[0];const ns=d.notes||[];return `
+    ${state.dogs.length?(()=>{const d=activeDog();const ns=d.notes||[];return `
     <div class="section-h jhead" onclick="toggleJournal()" style="cursor:pointer"><h2 style="font-size:18px">Dziennik · ${escH(d.name)}</h2><span class="jtoggle ${state.journalOpen?'open':''}">${ns.length} ${ico('chev')}</span></div>
     ${state.journalOpen?`<p class="muted" style="margin:-6px 0 12px">Zapisuj obserwacje — reakcje na jedzenie, samopoczucie, postępy.</p>
     ${ns.length?ns.map(x=>`<div class="jentry"><span class="dot"></span><div><div class="jt">${escH(x.text)}</div><small>${x.when}</small></div></div>`).join(''):'<p class="muted" style="padding:2px 0 8px">Brak notatek. Dodaj pierwszą obserwację o swoim psie.</p>'}
     <div class="jbox"><input id="jInput" placeholder="Dodaj obserwację o ${escH(d.name)}…" onkeydown="if(event.key==='Enter')addDogNote(0)"><button onclick="addDogNote(0)" aria-label="Dodaj">${ico('send')}</button></div>`:`<p class="muted" style="margin:-6px 0 6px">${ns.length?('Ostatnio: '+escH(ns[ns.length-1].text)):'Brak notatek — dotknij, aby dodać obserwację.'}</p>`}`;})():''}
 
-    ${state.dogs.length?(()=>{const d=state.dogs[0];const ws=d.weights||[];const cur=ws.length?ws[ws.length-1].kg:d.weightKg;return `
+    ${state.dogs.length?(()=>{const d=activeDog();const ws=d.weights||[];const cur=ws.length?ws[ws.length-1].kg:d.weightKg;return `
     <div class="section-h whead" onclick="toggleWeight()" style="cursor:pointer"><h2 style="font-size:18px">Waga · ${escH(d.name)}</h2><span class="jtoggle ${state.weightOpen?'open':''}">${cur!=null?cur+' kg':'—'} ${ico('chev')}</span></div>
     ${state.weightOpen?`
       ${ws.length>=2?weightChartSVG(ws):'<p class="muted" style="margin:-4px 0 12px">Dodaj co najmniej dwa pomiary, aby zobaczyć wykres trendu wagi.</p>'}
@@ -2057,7 +2077,7 @@ function goDietitian(){state.tab='recipes';state.cat='all';state.q='';state.dogM
 function goComm(){state.tab='recipes';state.cat='all';state.q='';state.dogMatch=false;state.flags=new Set(['comm']);state.showFilters=false;render();}
 function clearMatch(){state.dogMatch=false;state.flags.clear();render();}
 function allergyMode(){
-  const d=state.dogs&&state.dogs[0];
+  const d=activeDog();
   if(!d){toast('Dodaj profil psa, aby włączyć tryb alergii');state.tab='profile';render();return;}
   state.flags=new Set();state.dogMatch=true;state.cat='all';state.q='';state.tab='recipes';render();
   toast('Tryb alergii: ukrywam produkty uczulające dla '+d.name);
@@ -2122,8 +2142,8 @@ function groupPanel(groups,kind){
     return `<div class="fgroup"><div class="gtoggle ${open?'open':''}" onclick="toggleGroup('${g}')">${g} ${ico('chev')}</div>${open?`<div class="fchips" style="margin-top:10px">${chips}</div>`:''}</div>`;
   }).join('');
 }
-function setProfileFilters(){const d=state.dogs[0];if(!d)return;state.flags=new Set(dogProfileFlags(d));state.dogMatch=true;state.cat='all';state.q='';}
-function applyProfile(){setProfileFilters();render();toast(state.dogs[0]?('Dopasowano do '+state.dogs[0].name):'');}
+function setProfileFilters(){const d=activeDog();if(!d)return;state.flags=new Set(dogProfileFlags(d));state.dogMatch=true;state.cat='all';state.q='';}
+function applyProfile(){setProfileFilters();render();toast(activeDog()?('Dopasowano do '+activeDog().name):'');}
 function clearFilters(){state.flags.clear();state.q='';state.cat='all';state.sort='rec';state.dogMatch=false;render();}
 function setQ(v){state.q=v;render();const s=$('search');if(s){s.focus();s.setSelectionRange(v.length,v.length);}}
 function goAddDog(){state.tab='profile';render();setTimeout(function(){try{openDogForm();}catch(e){}},40);}
@@ -2235,7 +2255,7 @@ async function planForDays(n){
   toast('Dodano do planera na '+added.length+' '+(added.length===1?'dzień':'dni')+(added.length<n?' (tyle było wolnych miejsc)':''));
   for(const i of added){try{await sb.from('meal_plan_entries').delete().eq('owner_id',state.user.id).eq('plan_date',dates[i]).eq('position',0);await sb.from('meal_plan_entries').insert({owner_id:state.user.id,plan_date:dates[i],position:0,recipe_id:id});}catch(e){}}
 }
-function calcInit(){const ds=calcDogs();calcManual=!ds.length;if(calcDogIdx>=ds.length)calcDogIdx=0;calcRender();}
+function calcInit(){const ds=calcDogs();calcManual=!ds.length;const a=activeDog();if(a){const i=ds.findIndex(x=>x.id===a.id);if(i>=0)calcDogIdx=i;}if(calcDogIdx>=ds.length)calcDogIdx=0;calcRender();}
 function calcRender(){
   const box=document.getElementById('calcBody'); if(!box)return;
   const ds=calcDogs();
@@ -2303,7 +2323,7 @@ function paintDetail(id){
       <div class="tagline">${(r.good||[]).map(g=>`<span class="fit ok">${ico('check')} ${g}</span>`).join('')}</div>
       <div class="tagline" style="margin-top:8px">${(r.bad||[]).map(b=>`<span class="fit no">${ico('x')} ${b}</span>`).join('')}</div>`:''}
       ${r.warn?`<div class="warn"><span class="i">${ico('warn')}</span><p>${r.warn}</p></div>`:''}
-      ${(()=>{const d=state.dogs&&state.dogs[0];if(!d||recipeMatchesDog(r,d))return '';const names=(r.ing||[]).map(i=>(i[0]||'').toLowerCase());const hits=dogAvoid(d).filter(Boolean).filter(a=>{const t=exclTerms(a);return names.some(n=>t.some(x=>x&&n.includes(x)))||names.some(n=>n.includes(a));}).map(a=>{const e=EXCL.find(x=>x[0]===a);return e?e[1]:a;});return `<div class="warn danger"><span class="i">${ico('warn')}</span><p><b>Uwaga — niezgodne z profilem ${escH(d.name)}.</b> Ten przepis zawiera: ${escH(hits.join(', ')||'wykluczony składnik')}.</p></div>`;})()}
+      ${(()=>{const d=activeDog();if(!d||recipeMatchesDog(r,d))return '';const names=(r.ing||[]).map(i=>(i[0]||'').toLowerCase());const hits=dogAvoid(d).filter(Boolean).filter(a=>{const t=exclTerms(a);return names.some(n=>t.some(x=>x&&n.includes(x)))||names.some(n=>n.includes(a));}).map(a=>{const e=EXCL.find(x=>x[0]===a);return e?e[1]:a;});return `<div class="warn danger"><span class="i">${ico('warn')}</span><p><b>Uwaga — niezgodne z profilem ${escH(d.name)}.</b> Ten przepis zawiera: ${escH(hits.join(', ')||'wykluczony składnik')}.</p></div>`;})()}
       ${risky.length?`<div class="warn danger"><span class="i">${ico('warn')}</span><p>Automatyczne ostrzeżenie: wykryto składnik wymagający ostrożności (${risky.join(', ')}). Sprawdź, czy jest bezpieczny dla Twojego psa.</p></div>`:''}
       <button class="btn btn-gold" style="width:100%;margin-top:22px" onclick="addToPlan('${id}')">Dodaj do planera</button>
       <h3>Twoja ocena</h3>
