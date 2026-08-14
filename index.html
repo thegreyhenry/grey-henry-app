@@ -1992,7 +1992,7 @@ function renderProfile(){
   </div>`;
 }
 function dogFormHTML(d,editing){
-  d=d||{};
+  d=d||{};d.notes=d.notes||[];d.weights=d.weights||[];
   const acts=['Niska aktywność','Umiarkowana aktywność','Wysoka aktywność'];
   const goals=['Utrzymanie wagi','Redukcja wagi','Pies aktywny','Wsparcie seniora'];
   const at=v=>v?String(v).replace(/"/g,'&quot;'):'';
@@ -2026,7 +2026,8 @@ function dogFormHTML(d,editing){
 }
 
 function openDogForm(i){
-  const f=$('dogForm');const editing=(typeof i==='number');
+  const f=$('dogForm');if(!f)return;
+  const editing=(typeof i==='number' && i>=0 && i<(state.dogs||[]).length);
   pendingDogPhoto=null;
   if(!editing && f.dataset.mode==='add'){f.innerHTML='';f.dataset.mode='';state.editingDog=null;return;}
   state.editingDog=editing?i:null;
@@ -2041,7 +2042,8 @@ async function saveDog(){
   const split=v=>v?v.split(',').map(s=>s.trim()).filter(Boolean):[];
   const row={owner_id:state.user.id,name:g('d_name')||'Nowy pies',breed:g('d_breed')||null,age_text:(g('d_age')?(g('d_age').trim()+' lat'):null),weight_kg:parseFloat((g('d_weight')||'').replace(',','.'))||null,activity:(document.querySelector('#d_act .segchip.active')||{dataset:{}}).dataset.v||'Umiarkowana aktywność',goal:(document.querySelector('#d_goal .segchip.active')||{dataset:{}}).dataset.v||'Utrzymanie wagi',allergens:[...document.querySelectorAll('#dogExcl .achip.active')].map(b=>b.dataset.x),forbidden:[],preferences:g('d_pref')||null,conditions:g('d_cond')||null,note:g('d_note')||null};
   try{
-    const cur=(state.editingDog!=null)?state.dogs[state.editingDog]:null;
+    const ei=state.editingDog;
+    const cur=(ei!=null&&ei>=0&&ei<(state.dogs||[]).length)?state.dogs[ei]:null;
     let dogId=cur&&cur.id;
     if(dogId){const {error}=await sb.from('dogs').update(row).eq('id',dogId);if(error){toast('Błąd: '+error.message);return;}}
     else{const {data,error}=await sb.from('dogs').insert(row).select().single();if(error){toast('Błąd: '+error.message);return;}dogId=data.id;}
@@ -2055,14 +2057,16 @@ async function saveDog(){
     }catch(e){}}
     pendingDogPhoto=null;
     toast(cur&&cur.id?'Zapisano zmiany':'Dodano profil: '+row.name);
-    state.editingDog=null;await loadDogs();render();
+    state.editingDog=null;await loadDogs();
+    try{const ds=state.dogs||[];if(dogId){const ni=ds.findIndex(x=>x.id===dogId);if(ni>=0)state.dogIdx=ni;}if(state.dogIdx>=ds.length)state.dogIdx=0;}catch(_){}
+    render();
   }catch(e){toast('Błąd zapisu: '+(e.message||e));}
 }
 async function deleteDog(i){
   const d=state.dogs[i];
   if(!state.user||!d||!d.id){state.dogs.splice(i,1);state.editingDog=null;render();toast('Usunięto profil psa');return;}
   try{await sb.from('dogs').delete().eq('id',d.id);}catch(e){}
-  state.editingDog=null;await loadDogs();render();toast('Usunięto profil psa');
+  state.editingDog=null;await loadDogs();if(state.dogIdx>=(state.dogs||[]).length)state.dogIdx=0;render();toast('Usunięto profil psa');
 }
 function toggleJournal(){state.journalOpen=!state.journalOpen;render();}
 async function addDogNote(i){
@@ -2087,9 +2091,24 @@ const VIEWS={home:renderHome,recipes:renderRecipes,add:renderAddRecipe,planner:r
 let lastTab=null;
 function render(){
   const sc=$('screen');
+  if(!sc)return;
   const keep=(state.tab===lastTab);
   const y=sc?sc.scrollTop:0;
-  sc.innerHTML=VIEWS[state.tab]();
+  let html='';
+  try{
+    if(typeof VIEWS[state.tab]!=='function')state.tab='home';
+    html=VIEWS[state.tab]();
+    if(typeof html!=='string'||!html.trim())throw new Error('Pusty widok: '+state.tab);
+  }catch(err){
+    try{reportClientError('render('+state.tab+'): '+(err&&err.message||err),'render',err&&err.stack);}catch(_){}
+    html='<div class="pad" style="text-align:center;padding-top:70px">'
+      +'<div class="eyebrow">Coś poszło nie tak</div>'
+      +'<h2 class="serif" style="font-size:22px;margin:10px 0 8px">Nie udało się wyświetlić tego widoku</h2>'
+      +'<p class="muted" style="line-height:1.6;margin-bottom:20px">Twoje dane są bezpieczne. Spróbuj ponownie lub wróć na stronę główną.</p>'
+      +'<button class="btn btn-gold" style="width:100%" onclick="location.reload()">Odśwież aplikację</button>'
+      +'<button class="outbtn" style="margin-top:10px" onclick="state.tab=\'home\';render()">Strona główna</button></div>';
+  }
+  sc.innerHTML=html;
   renderNav();
   sc.style.scrollBehavior='auto';
   sc.scrollTop=keep?y:0;
