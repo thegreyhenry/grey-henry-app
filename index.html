@@ -833,6 +833,36 @@ body.t-light .safebar button{color:var(--gold2);border-color:rgba(143,127,72,.5)
 body.t-light .fc-chip{background:#fff}
 body.t-light .fc-chip.on{border-color:var(--green);background:rgba(42,52,49,.06)}
 body.t-light .fc-chip.on .fc-chip-av{background-color:var(--green);color:#fff}
+
+/* ===== KALKULATOR W PRZEPISIE: ekran przepisu jest ZAWSZE jasny,
+   więc kolory nie mogą zależeć od motywu aplikacji (wcześniej w trybie
+   ciemnym wychodził szary kafel i nieczytelny tekst). ===== */
+.detail .foodcalc{background:linear-gradient(160deg,#FFFDF7,#F6EFDD);border-color:rgba(143,127,72,.4);box-shadow:0 18px 40px -30px rgba(90,80,50,.45)}
+.detail .foodcalc h3{color:#23302B}
+.detail .fc-lbl{color:#3d4a44}
+.detail .fc-big{background:#fff;border-color:rgba(143,127,72,.3);box-shadow:0 10px 24px -18px rgba(90,80,50,.35)}
+.detail .fc-big b{background:linear-gradient(120deg,#8F7F48,#5f5430);-webkit-background-clip:text;background-clip:text;color:transparent}
+.detail .fc-big span{color:#6b736c;font-weight:500}
+.detail .fc-msg{color:#23302B}
+.detail .fc-msg b{color:#5f5430}
+.detail .fc-tip,.detail .fc-potcap{color:#6b736c}
+.detail .fc-dogtxt b{color:#23302B}
+.detail .fc-dogtxt span{color:#6b736c}
+.detail .fc-dogava{background-color:#8F7F48;color:#fff}
+.detail .fc-chip{background:#fff;border-color:rgba(42,52,49,.2);color:#23302B}
+.detail .fc-chip-av{background-color:rgba(143,127,72,.18);color:#5f5430}
+.detail .fc-chip.on{border-color:#8F7F48;background:rgba(143,127,72,.12)}
+.detail .fc-chip.on .fc-chip-av{background-color:#8F7F48;color:#fff}
+.detail .fc-chip-tx small{color:#6b736c;opacity:1}
+.detail .fc-edit,.detail .fc-backauto{background:#fff;color:#5f5430;border-color:rgba(143,127,72,.5)}
+.detail .fc-edit:hover,.detail .fc-backauto:hover{background:#8F7F48;color:#fff;border-color:#8F7F48}
+.detail .fc-inputwrap{background:#fff;border-color:rgba(143,127,72,.45)}
+.detail .fc-inputwrap input{color:#23302B}
+.detail .fc-inputwrap .unit{color:#8F7F48}
+.detail .fc-planbtn{background:#fff;color:#5f5430;border-color:rgba(143,127,72,.5)}
+.detail .fc-planbtn:hover{background:#2A3431;color:#F4EEE1;border-color:#2A3431}
+.detail .fc-potbar .seg{color:#2A3431}
+.detail .fc-err{color:#b3452f}
 .dogswitch{display:flex;gap:8px;overflow-x:auto;padding:14px 0 2px;scrollbar-width:none}
 .dogswitch::-webkit-scrollbar{display:none}
 .dsw{flex:0 0 auto;display:flex;align-items:center;gap:8px;padding:7px 14px 7px 7px;border-radius:999px;border:1.5px solid var(--line);background:rgba(244,238,225,.05);color:inherit;font-family:var(--sans);font-size:13px;font-weight:500;cursor:pointer;transition:border-color .15s,background .15s}
