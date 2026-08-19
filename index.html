@@ -2427,6 +2427,7 @@ function paintDetail(id){
       <p class="disclaim">Wartości odżywcze i porcje są orientacyjne i nie zastępują konsultacji z lekarzem weterynarii ani dietetykiem zwierzęcym.</p>
     </div>`;
   try{calcInit();}catch(e){}
+  try{loadRecipeComments(id,true);}catch(e){}
 }
 function hideDetail(){_detailId=null;$('detail').classList.remove('open');try{if(location.search)history.replaceState(history.state,'',location.pathname);}catch(e){}}
 function openRecipeFromUrl(){try{const rid=new URLSearchParams(location.search).get('r');if(rid&&findRecipe(rid))openRecipe(rid);}catch(e){}}
@@ -2445,14 +2446,27 @@ async function toggleFav(id){
   }catch(e){toast('Błąd ulubionych: '+(e.message||e));}
 }
 
+async function loadRecipeComments(id,repaint){
+  if(!sb||!id)return;
+  try{
+    const {data,error}=await sb.from('comments').select('body,created_at,author_id,profiles(display_name)').eq('recipe_id',id).order('created_at');
+    if(error){try{reportClientError('loadRecipeComments: '+error.message,'comments');}catch(_){ } return;}
+    state.comments[id]=(data||[]).map(c=>({who:escH((c.profiles&&c.profiles.display_name)||'Użytkownik'),text:escH(c.body),when:new Date(c.created_at).toLocaleDateString('pl-PL')}));
+    if(repaint&&typeof _detailId!=='undefined'&&_detailId===id&&$('detail')&&$('detail').classList.contains('open')){try{paintDetail(id);}catch(_){}}
+  }catch(e){try{reportClientError('loadRecipeComments: '+(e.message||e),'comments',e&&e.stack);}catch(_){}}
+}
 async function addComment(id){
   const inp=$('cInput');if(!inp||!inp.value.trim())return;
   if(!state.user){toast('Zaloguj się, aby komentować');return;}
   const text=inp.value.trim();
-  try{const {error}=await sb.from('comments').insert({recipe_id:id,author_id:state.user.id,body:text});if(error){toast('Błąd: '+error.message);return;}}catch(e){toast('Błąd: '+(e.message||e));return;}
-  const who=escH((state.profile&&state.profile.display_name)||'Ty');
-  (state.comments[id]=state.comments[id]||[]).push({who,text:escH(text),when:'teraz'});
-  openRecipe(id);toast('Dodano komentarz');
+  try{
+    const {error}=await sb.from('comments').insert({recipe_id:id,author_id:state.user.id,body:text});
+    if(error){toast('Nie udało się dodać komentarza: '+error.message);try{reportClientError('addComment: '+error.message,'comments');}catch(_){ } return;}
+  }catch(e){toast('Nie udało się dodać komentarza: '+(e.message||e));try{reportClientError('addComment: '+(e.message||e),'comments',e&&e.stack);}catch(_){ } return;}
+  inp.value='';
+  await loadRecipeComments(id,false);
+  if(typeof _detailId!=='undefined'&&_detailId===id){try{paintDetail(id);}catch(_){}}else{openRecipe(id);}
+  toast('Dodano komentarz');
 }
 async function rateRecipe(id,n){
   if(!state.user){toast('Zaloguj się, aby ocenić');return;}
