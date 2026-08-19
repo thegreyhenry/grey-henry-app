@@ -822,6 +822,17 @@ body.t-light .safebar button{color:var(--gold2);border-color:rgba(143,127,72,.5)
 .maybe-tag{display:inline-block;font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:#c9a227;border:1px solid rgba(201,162,39,.5);background:rgba(201,162,39,.1);padding:2px 6px;border-radius:999px;margin-left:6px;vertical-align:middle}
 .warn.maybe{border-color:rgba(201,162,39,.5);background:rgba(201,162,39,.1)}
 .warn.maybe .i{color:#c9a227}
+.fc-dogchips{display:flex;gap:8px;overflow-x:auto;margin:12px 0 4px;padding-bottom:2px;scrollbar-width:none}
+.fc-dogchips::-webkit-scrollbar{display:none}
+.fc-chip{flex:0 0 auto;display:flex;align-items:center;gap:8px;padding:6px 13px 6px 6px;border-radius:999px;border:1.5px solid var(--line);background:rgba(244,238,225,.05);color:inherit;font-family:var(--sans);cursor:pointer;transition:border-color .15s,background .15s}
+.fc-chip-av{width:26px;height:26px;border-radius:50%;flex:0 0 auto;background:rgba(191,177,120,.2);background-size:cover;background-position:center;display:grid;place-items:center;font-size:11px;font-weight:600;color:var(--gold)}
+.fc-chip-tx{display:flex;flex-direction:column;line-height:1.1;text-align:left;font-size:13px;font-weight:500}
+.fc-chip-tx small{font-size:10.5px;opacity:.7;margin-top:2px}
+.fc-chip.on{border-color:var(--gold);background:rgba(191,177,120,.16)}
+.fc-chip.on .fc-chip-av{background-color:var(--gold);color:var(--forest)}
+body.t-light .fc-chip{background:#fff}
+body.t-light .fc-chip.on{border-color:var(--green);background:rgba(42,52,49,.06)}
+body.t-light .fc-chip.on .fc-chip-av{background-color:var(--green);color:#fff}
 .dogswitch{display:flex;gap:8px;overflow-x:auto;padding:14px 0 2px;scrollbar-width:none}
 .dogswitch::-webkit-scrollbar{display:none}
 .dsw{flex:0 0 auto;display:flex;align-items:center;gap:8px;padding:7px 14px 7px 7px;border-radius:999px;border:1.5px solid var(--line);background:rgba(244,238,225,.05);color:inherit;font-family:var(--sans);font-size:13px;font-weight:500;cursor:pointer;transition:border-color .15s,background .15s}
@@ -1461,10 +1472,13 @@ function dogProfileFlags(dog){return [];}
 function catMatch(r,c){return c==='all'||r.flags.includes(c)||r.cat===c;}
 const AVOIDMAP=[['kurcz','bez_kurczak'],['wolow','bez_wolowina'],['ryb','bez_ryba'],['jaj','bez_jajko'],['nabia','bez_nabial'],['mlek','bez_nabial'],['lakto','bez_nabial'],['zbo','bez_zboz'],['gluten','bez_gluten'],['ryż','bez_ryz'],['ryz','bez_ryz']];
 function activeDog(){const ds=state.dogs||[];if(!ds.length)return null;let i=state.dogIdx||0;if(i<0||i>=ds.length)i=0;return ds[i];}
-function setActiveDog(i){const ds=state.dogs||[];if(i<0||i>=ds.length)return;state.dogIdx=i;try{localStorage.setItem('mt-dog',ds[i].id||String(i));}catch(_){}
-  if(typeof calcDogIdx!=='undefined')calcDogIdx=i;
+function setActiveDog(i,opts){const ds=state.dogs||[];if(i<0||i>=ds.length)return;state.dogIdx=i;try{localStorage.setItem('mt-dog',ds[i].id||String(i));}catch(_){}
+  if(typeof calcDogIdx!=='undefined'){const cd=calcDogs();const ci=cd.findIndex(x=>x.id===ds[i].id);calcDogIdx=ci>=0?ci:0;if(ci>=0)calcManual=false;}
   if(state.dogMatch)setProfileFilters();
-  render();toast('Widok dla: '+ds[i].name);}
+  const inDetail=(typeof _detailId!=='undefined'&&_detailId&&$('detail')&&$('detail').classList.contains('open'));
+  if(inDetail){try{paintDetail(_detailId);}catch(_){}}
+  else{render();}
+  if(!(opts&&opts.silent))toast('Przeliczono dla: '+ds[i].name);}
 function restoreActiveDog(){try{const k=localStorage.getItem('mt-dog');if(!k)return;const ds=state.dogs||[];const i=ds.findIndex(d=>(d.id||'')===k);if(i>=0)state.dogIdx=i;}catch(_){}}
 function dogSwitcherHTML(){const ds=state.dogs||[];if(ds.length<2)return '';const cur=state.dogIdx||0;
   return `<div class="pad"><div class="dogswitch">${ds.map((d,i)=>`<button type="button" class="dsw ${i===cur?'on':''}" onclick="setActiveDog(${i})"><span class="dsw-av"${d.photo?` style="background-image:url('${d.photo}')"`:''}>${d.photo?'':escH((d.name||'?').charAt(0).toUpperCase())}</span>${escH(d.name)}</button>`).join('')}</div></div>`;}
@@ -2332,19 +2346,27 @@ function calcRender(){
       <div class="fc-dogtxt"><b>Porcje przeliczone dla: ${escH(d.name)}</b><span>${String(w).replace('.',',')} kg · dane z profilu psa</span></div>
       <button type="button" class="fc-edit" onclick="calcManualOn()">${ico('edit')} Wpisz ręcznie</button>
     </div>
-    ${ds.length>1?`<div class="segchips fc-dogchips">${ds.map((x,n)=>`<button type="button" class="segchip ${n===i?'active':''}" onclick="calcPickDog(${n})">${escH(x.name)}</button>`).join('')}</div>`:''}
+    ${calcDogChipsHTML(i)}
     <div class="fc-out">${calcOutHTML(w)}</div>`;
   } else {
     const pre=ds.length?String(calcDogW(ds[Math.min(calcDogIdx,ds.length-1)])).replace('.',','):'';
     box.innerHTML=`<label class="fc-lbl" for="calcW">Ile waży Twój pies?</label>
     <div class="fc-inputwrap"><input id="calcW" inputmode="decimal" autocomplete="off" placeholder="np. 18,5" value="${pre}" oninput="calcPortions()"><span class="unit">kg</span></div>
+    ${calcDogChipsHTML(-1)}
     ${ds.length?`<button type="button" class="fc-backauto" onclick="calcAutoOn()">Przelicz z profilu psa</button>`:''}
     <div id="calcOut" class="fc-out">${pre?calcOutHTML(parseFloat(pre.replace(',','.'))):''}</div>`;
   }
 }
+function calcDogChipsHTML(cur){
+  const ds=calcDogs(); if(ds.length<2)return '';
+  return `<div class="fc-dogchips">${ds.map((x,n)=>`<button type="button" class="fc-chip ${n===cur?'on':''}" onclick="calcPickDog(${n})"><span class="fc-chip-av"${x.photo?` style="background-image:url('${x.photo}')"`:''}>${x.photo?'':escH((x.name||'?').charAt(0).toUpperCase())}</span><span class="fc-chip-tx">${escH(x.name)}<small>${String(calcDogW(x)).replace('.',',')} kg</small></span></button>`).join('')}</div>`;
+}
 function calcManualOn(){calcManual=true;calcRender();setTimeout(()=>{const el=document.getElementById('calcW');if(el){el.focus();if(el.select)el.select();}},60);}
 function calcAutoOn(){calcManual=false;calcRender();}
-function calcPickDog(i){calcDogIdx=i;calcRender();}
+function calcPickDog(i){const ds=calcDogs();const d=ds[i];if(!d)return;
+  const gi=(state.dogs||[]).findIndex(x=>x.id===d.id);
+  calcDogIdx=i;calcManual=false;
+  if(gi>=0)setActiveDog(gi,{silent:true});else calcRender();}
 function calcPortions(){
   const el=document.getElementById('calcW'), out=document.getElementById('calcOut');
   if(!el||!out)return;
