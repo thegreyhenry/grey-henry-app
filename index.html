@@ -2045,7 +2045,7 @@ function renderProfile(){
       ${state.user?`<div class="menu-item" onclick="allergyMode()"><span class="ic">${ico('flag')}</span><span class="lbl">Tryb alergii</span><span class="ar">${ico('chev')}</span></div>`:''}
       ${state.user&&notifSupported?`<div class="menu-item" onclick="notifSettings()"><span class="ic">${ico('bell')}</span><span class="lbl">Powiadomienia <span class="notif-dot ${notifPerm}"></span> ${notifPerm==='granted'?'włączone':(notifPerm==='denied'?'zablokowane':'wyłączone')}</span><span class="ar">${notifPerm==='granted'?'✓':'Włącz'}</span></div>`:''}
       <div class="menu-item" onclick="toggleTheme()"><span class="ic">${ico('theme')}</span><span class="lbl">Wygląd: ${currentTheme()==='dark'?'Ciemny (zielony)':'Jasny'}</span><span class="ar">Zmień</span></div>
-      <div class="menu-item" onclick="toast('Molly's Table — premium przepisy i suplementy dla psów, moderowane z troską.')"><span class="ic">${ico('info')}</span><span class="lbl">O Society</span><span class="ar">${ico('chev')}</span></div>
+      <div class="menu-item" onclick="toast('Molly\u2019s Table — premium przepisy i suplementy dla psów, moderowane z troską.')"><span class="ic">${ico('info')}</span><span class="lbl">O Society</span><span class="ar">${ico('chev')}</span></div>
       ${state.user?`<div class="menu-item" onclick="go('account')"><span class="ic">${ico('flag')}</span><span class="lbl">Ustawienia konta</span><span class="ar">${ico('chev')}</span></div>`:''}
       ${state.user?`<div class="menu-item" onclick="doLogout()"><span class="ic">${ico('x')}</span><span class="lbl">Wyloguj</span><span class="ar">${ico('chev')}</span></div>`:''}
     </div>
