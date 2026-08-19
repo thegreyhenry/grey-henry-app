@@ -818,6 +818,10 @@ body.t-light .safebar button{color:var(--gold2);border-color:rgba(143,127,72,.5)
 .warn.danger .i{color:#c8503c}
 .rcard.unsafe .thumb{outline:2px solid rgba(200,80,60,.55);outline-offset:-2px}
 .unsafe-tag{display:inline-block;font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:#c8503c;border:1px solid rgba(200,80,60,.5);background:rgba(200,80,60,.1);padding:2px 6px;border-radius:999px;margin-left:6px;vertical-align:middle}
+.rcard.maybe .thumb{outline:2px dashed rgba(201,162,39,.6);outline-offset:-2px}
+.maybe-tag{display:inline-block;font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:#c9a227;border:1px solid rgba(201,162,39,.5);background:rgba(201,162,39,.1);padding:2px 6px;border-radius:999px;margin-left:6px;vertical-align:middle}
+.warn.maybe{border-color:rgba(201,162,39,.5);background:rgba(201,162,39,.1)}
+.warn.maybe .i{color:#c9a227}
 .dogswitch{display:flex;gap:8px;overflow-x:auto;padding:14px 0 2px;scrollbar-width:none}
 .dogswitch::-webkit-scrollbar{display:none}
 .dsw{flex:0 0 auto;display:flex;align-items:center;gap:8px;padding:7px 14px 7px 7px;border-radius:999px;border:1.5px solid var(--line);background:rgba(244,238,225,.05);color:inherit;font-family:var(--sans);font-size:13px;font-weight:500;cursor:pointer;transition:border-color .15s,background .15s}
@@ -1399,16 +1403,59 @@ const EXCL=[
  ['orzechy','Orzechy',['orzech']]
 ];
 function exclTerms(key){const e=EXCL.find(x=>x[0]===key);return e?e[2]:[key];}
-function recipeMatchesDog(r,dog){
-  if(!dog)return true;
-  const names=(r.ing||[]).map(i=>(i[0]||'').toLowerCase());
+const PLMAP={'ą':'a','ć':'c','ę':'e','ł':'l','ń':'n','ó':'o','ś':'s','ź':'z','ż':'z'};
+function normTxt(x){return String(x||'').toLowerCase().replace(/[ąćęłńóśźż]/g,c=>PLMAP[c]||c).replace(/[^a-z0-9 ]+/g,' ').replace(/\s+/g,' ').trim();}
+function stemPl(w){w=w||'';for(const suf of ['iami','ami','ach','owi','ego','emu','ie','em','om','ow','y','i','a','u','e','o']){if(w.length-suf.length>=4&&w.endsWith(suf))return w.slice(0,w.length-suf.length);}return w;}
+function lev(a,b){const m=a.length,n=b.length;if(!m)return n;if(!n)return m;let prev=Array.from({length:n+1},(_,j)=>j),cur=new Array(n+1);
+  for(let i=1;i<=m;i++){cur[0]=i;for(let j=1;j<=n;j++){cur[j]=Math.min(prev[j]+1,cur[j-1]+1,prev[j-1]+(a[i-1]===b[j-1]?0:1));}const t=prev;prev=cur;cur=t;}
+  return prev[n];}
+function tolFor(len){return len<=2?0:(len<=6?1:2);}
+/* zwraca 'exact' | 'fuzzy' | null dla pojedynczego składnika i terminu */
+function termHit(ingName,term){
+  const nt=normTxt(term); if(!nt)return null;
+  const ni=normTxt(ingName); if(!ni)return null;
+  if(ni.includes(nt))return 'exact';
+  const words=ni.split(' ').filter(Boolean);
+  const st=stemPl(nt);
+  for(const w of words){
+    const sw=stemPl(w);
+    if(sw===st||sw.includes(st)||st.includes(sw))return 'exact';
+    const tol=tolFor(Math.max(st.length,sw.length));
+    if(tol>0&&Math.abs(sw.length-st.length)<=tol&&lev(sw,st)<=tol)return 'fuzzy';
+  }
+  return null;
+}
+/* pełna analiza: lista konfliktów z poziomem pewności */
+function dogConflicts(r,dog){
+  if(!dog)return [];
+  const ings=(r.ing||[]).map(i=>(i&&i[0])||'');
+  const out=[];
   for(const a of dogAvoid(dog)){
     if(!a)continue;
-    const terms=exclTerms(a);
-    if(names.some(n=>terms.some(t=>t&&n.includes(t))))return false;
-    if(!EXCL.find(x=>x[0]===a)&&names.some(n=>n.includes(a)))return false;
+    const e=EXCL.find(x=>x[0]===a);
+    const label=e?e[1]:a;
+    const terms=e?e[2]:[a];
+    let best=null,where='';
+    for(const ing of ings){
+      for(const t of terms){
+        const h=termHit(ing,t);
+        if(h==='exact'){best='exact';where=ing;break;}
+        if(h==='fuzzy'&&!best){best='fuzzy';where=ing;}
+      }
+      if(best==='exact')break;
+    }
+    if(best)out.push({key:a,label:label,level:best,ing:where});
   }
-  return true;
+  return out;
+}
+function recipeMatchesDog(r,dog){
+  if(!dog)return true;
+  return !dogConflicts(r,dog).some(c=>c.level==='exact');
+}
+function recipeMaybeUnsafe(r,dog){
+  if(!dog)return false;
+  const c=dogConflicts(r,dog);
+  return c.length>0 && !c.some(x=>x.level==='exact');
 }
 function dogProfileFlags(dog){return [];}
 function catMatch(r,c){return c==='all'||r.flags.includes(c)||r.cat===c;}
@@ -1441,7 +1488,7 @@ function passFilters(r){
 function diffDots(r){const lv=({easy:1,medium:2,hard:3})[r.diffLevel||({'Łatwy':'easy','Średni':'medium','Trudny':'hard'})[r.diff]||'easy']||1;let h='';for(let i=1;i<=3;i++)h+=`<span class="dbone ${i<=lv?'on':''}"></span>`;return `<span class="dbones" title="Trudność ${lv}/3">${h}</span>`;}
 function recipeCardHTML(r,full){
   const [bc,bt]=BADGE[r.badge];
-  return `<div class="rcard ${full?'full':''} ${isUnsafe(r)?'unsafe':''}" onclick="openRecipe('${r.id}')">
+  return `<div class="rcard ${full?'full':''} ${isUnsafe(r)?'unsafe':(recipeMaybeUnsafe(r,safeDog())?'maybe':'')}" onclick="openRecipe('${r.id}')">
     <div class="thumb ${r.wash}"${r.thumb?` style="background-image:linear-gradient(180deg,rgba(0,0,0,.04),rgba(0,0,0,.28)),url('${r.thumb}');background-size:cover;background-position:center"`:''}>${r.thumb?'':`<img class="wm" src="${MONOG}" alt="" loading="lazy" decoding="async">`}<button class="cardfav ${state.favs.has(r.id)?'on':''}" onclick="event.stopPropagation();toggleFav('${r.id}')" aria-label="Ulubione">${ico('heart')}</button><span class="badge ${bc}">${bt}</span></div>
     <h4>${r.name}</h4>
     <div class="sub"><span>${r.time}</span><span class="dot">·</span><span>${r.kcal}</span>${r.ratingCount?`<span class="dot">·</span><span>${star} ${r.rating}</span>`:''}</div></div>`;
@@ -1735,7 +1782,7 @@ async function saveRecipe(){
 function renderPlanner(){
   const week=state.plan;
   const rows=week.map(([d,id])=>{
-    if(id){const r=findRecipe(id);if(r)return `<div class="day"><div class="daytag">${d}</div><div class="dayslot" onclick="openRecipe('${id}')"><div><h5>${r.name}${isUnsafe(r)?' <span class="unsafe-tag">niezgodny</span>':''}</h5><div class="m">${r.time} · ${r.kcal} · ${r.portion}</div></div><button class="dayrm" onclick="event.stopPropagation();clearPlanDay('${d}')" aria-label="Usuń">${ico('x')}</button></div></div>`;}
+    if(id){const r=findRecipe(id);if(r)return `<div class="day"><div class="daytag">${d}</div><div class="dayslot" onclick="openRecipe('${id}')"><div><h5>${r.name}${isUnsafe(r)?' <span class="unsafe-tag">niezgodny</span>':(recipeMaybeUnsafe(r,safeDog())?' <span class="maybe-tag">sprawdź skład</span>':'')}</h5><div class="m">${r.time} · ${r.kcal} · ${r.portion}</div></div><button class="dayrm" onclick="event.stopPropagation();clearPlanDay('${d}')" aria-label="Usuń">${ico('x')}</button></div></div>`;}
     return `<div class="day"><div class="daytag">${d}</div><div class="dayslot empty" onclick="goSearch()">${ico('plus')}Dodaj posiłek</div></div>`;
   }).join('');
   const shop=state.shop||[];
@@ -2342,7 +2389,12 @@ function paintDetail(id){
       <div class="tagline">${(r.good||[]).map(g=>`<span class="fit ok">${ico('check')} ${g}</span>`).join('')}</div>
       <div class="tagline" style="margin-top:8px">${(r.bad||[]).map(b=>`<span class="fit no">${ico('x')} ${b}</span>`).join('')}</div>`:''}
       ${r.warn?`<div class="warn"><span class="i">${ico('warn')}</span><p>${r.warn}</p></div>`:''}
-      ${(()=>{const d=activeDog();if(!d||recipeMatchesDog(r,d))return '';const names=(r.ing||[]).map(i=>(i[0]||'').toLowerCase());const hits=dogAvoid(d).filter(Boolean).filter(a=>{const t=exclTerms(a);return names.some(n=>t.some(x=>x&&n.includes(x)))||names.some(n=>n.includes(a));}).map(a=>{const e=EXCL.find(x=>x[0]===a);return e?e[1]:a;});return `<div class="warn danger"><span class="i">${ico('warn')}</span><p><b>Uwaga — niezgodne z profilem ${escH(d.name)}.</b> Ten przepis zawiera: ${escH(hits.join(', ')||'wykluczony składnik')}.</p></div>`;})()}
+      ${(()=>{const d=activeDog();if(!d)return '';const cs=dogConflicts(r,d);if(!cs.length)return '';
+        const sure=cs.filter(c=>c.level==='exact'),maybe=cs.filter(c=>c.level==='fuzzy');
+        let h='';
+        if(sure.length)h+=`<div class="warn danger"><span class="i">${ico('warn')}</span><p><b>Niezgodne z profilem ${escH(d.name)}.</b> Ten przepis zawiera: ${escH(sure.map(c=>c.label).join(', '))}.</p></div>`;
+        if(maybe.length)h+=`<div class="warn maybe"><span class="i">${ico('info')}</span><p><b>Sprawdź skład — możliwa niezgodność.</b> Składnik „${escH(maybe[0].ing)}" wygląda podobnie do wykluczenia: ${escH(maybe.map(c=>c.label).join(', '))}. Mogła to być literówka w przepisie — oceń sam.</p></div>`;
+        return h;})()}
       ${risky.length?`<div class="warn danger"><span class="i">${ico('warn')}</span><p>Automatyczne ostrzeżenie: wykryto składnik wymagający ostrożności (${risky.join(', ')}). Sprawdź, czy jest bezpieczny dla Twojego psa.</p></div>`:''}
       <button class="btn btn-gold" style="width:100%;margin-top:22px" onclick="addToPlan('${id}')">Dodaj do planera</button>
       <h3>Twoja ocena</h3>
