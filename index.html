@@ -863,6 +863,13 @@ body.t-light .fc-chip.on .fc-chip-av{background-color:var(--green);color:#fff}
 .detail .fc-planbtn:hover{background:#2A3431;color:#F4EEE1;border-color:#2A3431}
 .detail .fc-potbar .seg{color:#2A3431}
 .detail .fc-err{color:#b3452f}
+.fc-scale{margin:14px 0 6px;border:1px solid rgba(143,127,72,.3);border-radius:14px;overflow:hidden}
+.fc-scale-h{padding:9px 14px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;background:rgba(143,127,72,.12);color:#5f5430}
+.fc-tab{width:100%;border-collapse:collapse;font-size:13.5px}
+.fc-tab th{text-align:left;padding:8px 14px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#6b736c;font-weight:600;border-bottom:1px solid rgba(143,127,72,.2)}
+.fc-tab td{padding:9px 14px;border-bottom:1px solid rgba(143,127,72,.12);color:#23302B}
+.fc-tab tr:last-child td{border-bottom:none}
+.fc-tab td b{color:#5f5430;font-size:15px}
 .dogswitch{display:flex;gap:8px;overflow-x:auto;padding:14px 0 2px;scrollbar-width:none}
 .dogswitch::-webkit-scrollbar{display:none}
 .dsw{flex:0 0 auto;display:flex;align-items:center;gap:8px;padding:7px 14px 7px 7px;border-radius:999px;border:1.5px solid var(--line);background:rgba(244,238,225,.05);color:inherit;font-family:var(--sans);font-size:13px;font-weight:500;cursor:pointer;transition:border-color .15s,background .15s}
@@ -1164,7 +1171,7 @@ function mapDbRecipe(r,ings,steps,tagKeys,i){
   return {id:r.id,name:escH(r.title),cat:(tagKeys.find(k=>k.indexOf('m_')===0)||'gotowane'),badge,wash:WASHES[i%4],
     time:r.time_min?r.time_min+' min':'—',diff:DIFFL[r.difficulty]||'Łatwy',diffLevel:r.difficulty||'easy',kcal:r.kcal?r.kcal+' kcal':'—',
     portion:r.servings?('≈ '+r.servings+' porcji'):'porcja',rating:r.rating_avg||0,ratingCount:r.rating_count||0,featured:r.featured||false,created:r.created_at||'',desc:escH(r.description||''),
-    flags:tagKeys,ing:(ings||[]).map(x=>[escH(x.name),escH(x.amount||'')]),steps:(steps||[]).map(x=>escH(x.body)),detail:(ings!=null&&steps!=null),good:[],bad:[],warn:'',userMade:!!r.author_id,status:r.status,thumb:r.thumb_url||'',image:r.image_url||''};
+    flags:tagKeys,ing:(ings||[]).map(x=>[escH(x.name),escH(x.amount||'')]),steps:(steps||[]).map(x=>escH(x.body)),detail:(ings!=null&&steps!=null),good:[],bad:[],warn:'',userMade:!!r.author_id,yieldG:r.yield_g||null,refKg:r.ref_dog_kg||null,status:r.status,thumb:r.thumb_url||'',image:r.image_url||''};
 }
 async function loadData(){
   if(!sb)return;
@@ -2329,8 +2336,31 @@ async function shareRecipe(id){
 let calcManual=false, calcDogIdx=0;
 function calcDogW(d){const m=String((d&&d.weight)||'').replace(',','.').match(/[\d.]+/);const w=m?parseFloat(m[0]):0;return w>0?w:0;}
 function calcDogs(){return (state.dogs||[]).filter(d=>calcDogW(d)>0);}
+function calcRecipeScaleHTML(w,r){
+  const PERKG=40;
+  const daily=w*PERKG, dailyR=Math.round(daily/10)*10;
+  const refDaily=r.refKg*PERKG;              // ile g/dzień dla psa referencyjnego
+  const mult=daily/refDaily;                  // mnożnik składników na 1 dzień
+  const yieldG=r.yieldG;                      // ile daje receptura w oryginale
+  const perDayYield=yieldG*mult;              // ile wyjdzie po przeskalowaniu na 1 dzień
+  const fmt=n=>(Math.round(n*100)/100).toString().replace('.',',');
+  const days=[2,3,5,7];
+  const rows=days.map(d=>`<tr><td>${d} dni</td><td><b>×${fmt(mult*d)}</b></td><td>${Math.round(perDayYield*d)} g</td></tr>`).join('');
+  const plDni=n=>n===1?'dzień':'dni';
+  return `<div class="fc-big"><b>${dailyR} g</b><span>dzienna porcja Twojego psa</span></div>
+    <p class="fc-msg">Ta receptura jest opracowana dla psa <b>${fmt(r.refKg)} kg</b> i daje ok. <b>${yieldG} g</b> — czyli jedną porcję dzienną.
+    ${Math.abs(mult-1)<0.02
+      ? ` Waga Twojego psa jest bardzo zbliżona, więc <b>gotuj według przepisu bez zmian</b>.`
+      : ` Dla Twojego psa pomnóż <b>wszystkie składniki ×${fmt(mult)}</b> — wyjdzie ok. ${Math.round(perDayYield)} g na jeden dzień.`}</p>
+    <div class="fc-scale"><div class="fc-scale-h">Gotowanie na zapas</div>
+      <table class="fc-tab"><thead><tr><th>Na ile</th><th>Mnożnik składników</th><th>Ile wyjdzie</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <p class="fc-tip">Po ugotowaniu odważ porcje po <b>${dailyR} g</b>, jedną zostaw na najbliższy ${plDni(1)}, a pozostałe zamroź.</p>
+    <button type="button" class="fc-planbtn" onclick="planForDays(3)">Dodaj do planera na 3 dni</button>`;
+}
 function calcOutHTML(w){
   if(!(w>0))return '<p class="fc-err">Podaj wagę psa większą od zera.</p>';
+  const _r=(typeof _detailId!=='undefined'&&_detailId)?findRecipe(_detailId):null;
+  if(_r&&_r.yieldG&&_r.refKg)return calcRecipeScaleHTML(w,_r);
   const YIELD=2000, PERKG=40;
   const daily=w*PERKG, portions=YIELD/daily, full=Math.floor(portions);
   const remaining=YIELD-full*daily, dailyR=Math.round(daily/10)*10, remR=Math.round(remaining), whole=remR<1;
