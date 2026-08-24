@@ -1902,17 +1902,78 @@ async function removeShop(id){
   state.shop=(state.shop||[]).filter(x=>x.id!==id);render();
   try{await sb.from('shopping_items').delete().eq('id',id);}catch(e){}
 }
+function shopCleanName(n){
+  let x=String(n||'').trim();
+  x=x.replace(/\s*\([^)]*%[^)]*\)\s*/g,' ');              // usuń "(4,1% tł.)"
+  x=x.replace(/,?\s*samo mięso/gi,'');                     // usuń "samo mięso"
+  x=x.replace(/,?\s*(surowe|obrane|gotowany|gotowana|gotowane)\b/gi,'');
+  x=x.replace(/\s*,\s*/g,', ').replace(/\s+/g,' ').replace(/[,\s]+$/,'').trim();
+  return x.charAt(0).toUpperCase()+x.slice(1);
+}
+function shopParseAmount(a){
+  const t=String(a||'').replace(',','.');
+  const m=t.match(/([\d.]+)\s*(kg|g|ml|l|szt\.?|łyżeczk\w*|łyżk\w*|szklank\w*|garść)?/i);
+  if(!m)return {num:null,unit:'',raw:String(a||'')};
+  const num=parseFloat(m[1]);
+  let unit=(m[2]||'').toLowerCase().replace('szt.','szt').replace(/^szt$/,'szt.');
+  return isNaN(num)?{num:null,unit:'',raw:String(a||'')}:{num,unit,raw:String(a||'')};
+}
+function shopFmt(n,unit){
+  if((unit||'').startsWith('szt'))return Math.ceil(n-0.001).toString();   // sztuk nie kupuje się w ułamkach
+  if(n>=1000)return (Math.round(n/10)/100).toString().replace('.',',')+' kg';
+  if(n>=10)return Math.round(n).toString();                               // gramy/ml bez ułamków
+  return (Math.round(n*100)/100).toString().replace('.',',');
+}
+/* Buduje pozycje listy: sumuje te same składniki z całego planu,
+   pokazuje ilość z przepisu ORAZ przeliczoną pod wagę aktywnego psa. */
+function shopBuild(){
+  const dog=activeDog();
+  const dogKg=dog?parseFloat(String(dog.weight||'').replace(',','.').replace(/[^0-9.]/g,'')):0;
+  const map=new Map();
+  state.plan.forEach(([d,id])=>{
+    if(!id)return;
+    const r=findRecipe(id); if(!r||!r.ing)return;
+    const mult=(r.yieldG&&r.refKg&&dogKg>0)?((dogKg*40)/(r.refKg*40)):1;
+    r.ing.forEach(x=>{
+      const rawName=x[0]||'';
+      if(/^woda\b/i.test(rawName))return;                    // wody się nie kupuje
+      const name=shopCleanName(rawName);
+      const p=shopParseAmount(x[1]);
+      const key=(name+'|'+(p.unit||'')).toLowerCase();
+      const cur=map.get(key)||{name,unit:p.unit,base:0,scaled:0,textOnly:[],n:0};
+      if(p.num!=null){cur.base+=p.num;cur.scaled+=p.num*mult;}
+      else if(p.raw&&!cur.textOnly.includes(p.raw))cur.textOnly.push(p.raw);
+      cur.n++; map.set(key,cur);
+    });
+  });
+  const out=[...map.values()].map(v=>{
+    let label=v.name;
+    if(v.base>0){
+      const bs=shopFmt(v.base,v.unit), sc=shopFmt(v.scaled,v.unit);
+      const base=bs+(v.unit&&!/kg$/.test(bs)?' '+v.unit:'');
+      const scal=sc+(v.unit&&!/kg$/.test(sc)?' '+v.unit:'');
+      label=v.name+' — '+(Math.abs(v.scaled-v.base)<0.01?base:(scal+' (wg przepisu: '+base+')'));
+    } else if(v.textOnly.length){ label=v.name+' — '+v.textOnly.join(', '); }
+    return label;
+  });
+  return out.sort((a,b)=>a.localeCompare(b,'pl'));
+}
 async function generateShop(){
   if(!state.user){toast('Zaloguj się, aby zapisać listę');return;}
-  const names=new Set();
-  state.plan.forEach(([d,id])=>{if(id){const r=findRecipe(id);if(r&&r.ing)r.ing.forEach(x=>names.add(x[0]));}});
-  if(!names.size){toast('Najpierw zaplanuj posiłki');return;}
-  const existing=new Set((state.shop||[]).map(s=>s.label.toLowerCase()));
-  const toAdd=[...names].filter(n=>!existing.has(n.toLowerCase()));
+  const items=shopBuild();
+  if(!items.length){toast('Najpierw zaplanuj posiłki');return;}
+  const existing=new Set((state.shop||[]).map(s=>String(s.label).split(' — ')[0].toLowerCase()));
+  const toAdd=items.filter(n=>!existing.has(n.split(' — ')[0].toLowerCase()));
   if(!toAdd.length){toast('Lista jest już aktualna');return;}
-  try{const {data,error}=await sb.from('shopping_items').insert(toAdd.map(label=>({owner_id:state.user.id,label,is_custom:false,checked:false}))).select();if(error){toast('Błąd: '+error.message);return;}if(data)state.shop.push(...data);}catch(e){toast('Błąd: '+(e.message||e));return;}
-  render();toast('Dodano składniki z planu');
+  try{
+    const {data,error}=await sb.from('shopping_items').insert(toAdd.map(label=>({owner_id:state.user.id,label,is_custom:false,checked:false}))).select();
+    if(error){toast('Błąd: '+error.message);return;}
+    if(data)state.shop.push(...data);
+  }catch(e){toast('Błąd: '+(e.message||e));return;}
+  const dog=activeDog();
+  render();toast('Dodano '+toAdd.length+' pozycji'+(dog?(' — przeliczone dla: '+dog.name):''));
 }
+
 
 function renderCommunity(){
   if(state.activeThread)return renderThreadView();
