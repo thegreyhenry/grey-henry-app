@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Molly's Table — Panel administracyjny</title>
+<title>Molly's Table - Panel administracyjny</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -184,7 +184,7 @@ let recFilter='all', recQ='', recSort='new', userQ='', modSel=new Set();
 
 function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2200);}
 function esc(s){return (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
-function fmtD(s){if(!s)return '—';try{return new Date(s).toLocaleDateString('pl-PL',{day:'2-digit',month:'2-digit',year:'numeric'});}catch(e){return '—';}}
+function fmtD(s){if(!s)return '-';try{return new Date(s).toLocaleDateString('pl-PL',{day:'2-digit',month:'2-digit',year:'numeric'});}catch(e){return '-';}}
 const isAdmin=()=>me&&me.role==='admin';
 
 async function doLogin(){
@@ -198,7 +198,7 @@ async function doLogin(){
 async function afterLogin(user){
   const {data:prof}=await sb.from('profiles').select('display_name,role').eq('id',user.id).single();
   if(!prof||STAFF.indexOf(prof.role)<0){
-    $('lerr').textContent='Brak uprawnień — to konto nie jest administratorem ani moderatorem.';
+    $('lerr').textContent='Brak uprawnień - to konto nie jest administratorem ani moderatorem.';
     await sb.auth.signOut();return;
   }
   me={id:user.id,name:prof.display_name||'Administrator',role:prof.role};
@@ -234,7 +234,7 @@ async function refreshAll(){
     db.announcements=anns.data||[];
     db.collections=cols.data||[]; db.colRecipes=colrec.data||[]; db.config={}; (cfg.data||[]).forEach(row=>{db.config[row.key]=row.value;});
     db.stats=(stats&&!stats.error&&stats.data)?stats.data:{};
-    uMap={}; db.users.forEach(x=>uMap[x.id]=x.display_name||'—');
+    uMap={}; db.users.forEach(x=>uMap[x.id]=x.display_name||'-');
     rMap={}; db.recipes.forEach(x=>rMap[x.id]=x.title);
     const byStatus={approved:0,pending:0,rejected:0,draft:0};
     db.recipes.forEach(x=>{byStatus[x.status]=(byStatus[x.status]||0)+1;});
@@ -297,16 +297,16 @@ function renderDash(){
   if(tr.length){html+=`<div class="panel"><div class="panel-h"><h3>Najwyżej oceniane</h3></div><table><thead><tr><th>Przepis</th><th>Ocena</th><th>Liczba ocen</th></tr></thead><tbody>${tr.map(r=>`<tr><td><b>${esc(r.title)}</b></td><td>★ ${r.rating_avg}</td><td class="muted-cell">${r.rating_count}</td></tr>`).join('')}</tbody></table></div>`;}
   const pend=db.recipes.filter(r=>r.status==='pending').slice(0,5);
   html+=`<div class="panel"><div class="panel-h"><h3>Oczekuje na akceptację</h3><button class="btn ghost sm" onclick="setView('mod')">Przejdź do moderacji</button></div>`;
-  if(pend.length){html+='<table><thead><tr><th>Przepis</th><th>Autor</th><th>Dodano</th><th></th></tr></thead><tbody>'+pend.map(r=>`<tr><td><b>${esc(r.title)}</b></td><td class="muted-cell">${esc(uMap[r.author_id]||'—')}</td><td class="muted-cell">${fmtD(r.created_at)}</td><td><div class="row"><button class="btn sm gold" onclick="openEditor('${r.id}')">Edytuj</button><button class="btn sm" onclick="approve('${r.id}')">Zatwierdź</button></div></td></tr>`).join('')+'</tbody></table>';}
+  if(pend.length){html+='<table><thead><tr><th>Przepis</th><th>Autor</th><th>Dodano</th><th></th></tr></thead><tbody>'+pend.map(r=>`<tr><td><b>${esc(r.title)}</b></td><td class="muted-cell">${esc(uMap[r.author_id]||'-')}</td><td class="muted-cell">${fmtD(r.created_at)}</td><td><div class="row"><button class="btn sm gold" onclick="openEditor('${r.id}')">Edytuj</button><button class="btn sm" onclick="approve('${r.id}')">Zatwierdź</button></div></td></tr>`).join('')+'</tbody></table>';}
   else html+='<div class="empty">Brak przepisów oczekujących na akceptację.</div>';
   html+='</div>';
   const rc=db.comments.slice(0,5);
   html+=`<div class="panel"><div class="panel-h"><h3>Najnowsze komentarze</h3><button class="btn ghost sm" onclick="setView('comments')">Wszystkie</button></div>`;
-  if(rc.length){html+='<table><tbody>'+rc.map(c=>`<tr><td><b>${esc(uMap[c.author_id]||'—')}</b> <span class="muted-cell">· ${esc(rMap[c.recipe_id]||'przepis')}</span><div class="muted-cell">${esc(c.body)}</div></td><td class="muted-cell">${fmtD(c.created_at)}</td></tr>`).join('')+'</tbody></table>';}
+  if(rc.length){html+='<table><tbody>'+rc.map(c=>`<tr><td><b>${esc(uMap[c.author_id]||'-')}</b> <span class="muted-cell">· ${esc(rMap[c.recipe_id]||'przepis')}</span><div class="muted-cell">${esc(c.body)}</div></td><td class="muted-cell">${fmtD(c.created_at)}</td></tr>`).join('')+'</tbody></table>';}
   else html+='<div class="empty">Brak komentarzy.</div>';
   html+='</div>';
   html+=`<div class="panel"><div class="panel-h"><h3>Monitoring zasobów</h3></div><div style="padding:16px 18px;line-height:1.8">
-    <div>Rozmiar bazy: <b>${st.db_size_pretty||'—'}</b> <span class="muted-cell">/ limit 500 MB (plan Free)</span></div>
+    <div>Rozmiar bazy: <b>${st.db_size_pretty||'-'}</b> <span class="muted-cell">/ limit 500 MB (plan Free)</span></div>
     <div>Łącznie: <b>${st.dogs_total||c.dogs||0}</b> psów · <b>${st.favorites_total||0}</b> polubień · <b>${st.announcements_total||0}</b> ogłoszeń</div>
     <div class="muted-cell" style="margin-top:8px">Zużycie transferu (egress) i ruchu API znajdziesz w panelu Supabase → Reports. Plan Free: 5 GB egress / miesiąc, 50 000 aktywnych użytkowników / miesiąc.</div>
   </div></div>`;
@@ -343,7 +343,7 @@ function renderMod(){
   if(list.length)html+=`<div class="tools"><button id="modSelBtn" class="btn sm gold" disabled style="opacity:.5" onclick="approveSelected()">Zatwierdź zaznaczone (0)</button><button class="btn sm" onclick="approveAllPending()">Zatwierdź wszystkie</button></div>`;
   html+=`</div>`;
   if(!list.length){html+='<div class="empty">Brak przepisów oczekujących na akceptację.</div></div>';$('view').innerHTML=html;return;}
-  html+='<table><thead><tr><th style="width:36px"><input type="checkbox" onclick="toggleAllMod(this)" aria-label="Zaznacz wszystkie"></th><th>Przepis</th><th>Autor</th><th>Dodano</th><th></th></tr></thead><tbody>'+list.map(r=>`<tr><td><input type="checkbox" data-id="${r.id}" onclick="toggleModSel('${r.id}',this)"></td><td><b>${esc(r.title)}</b></td><td class="muted-cell">${esc(uMap[r.author_id]||'—')}</td><td class="muted-cell">${fmtD(r.created_at)}</td><td><div class="row"><button class="btn sm gold" onclick="openEditor('${r.id}')">Edytuj</button><button class="btn sm" onclick="approve('${r.id}')">Zatwierdź</button><button class="btn sm danger" onclick="reject('${r.id}')">Odrzuć</button></div></td></tr>`).join('')+'</tbody></table></div>';
+  html+='<table><thead><tr><th style="width:36px"><input type="checkbox" onclick="toggleAllMod(this)" aria-label="Zaznacz wszystkie"></th><th>Przepis</th><th>Autor</th><th>Dodano</th><th></th></tr></thead><tbody>'+list.map(r=>`<tr><td><input type="checkbox" data-id="${r.id}" onclick="toggleModSel('${r.id}',this)"></td><td><b>${esc(r.title)}</b></td><td class="muted-cell">${esc(uMap[r.author_id]||'-')}</td><td class="muted-cell">${fmtD(r.created_at)}</td><td><div class="row"><button class="btn sm gold" onclick="openEditor('${r.id}')">Edytuj</button><button class="btn sm" onclick="approve('${r.id}')">Zatwierdź</button><button class="btn sm danger" onclick="reject('${r.id}')">Odrzuć</button></div></td></tr>`).join('')+'</tbody></table></div>';
   $('view').innerHTML=html;
 }
 function updateModBtn(){const n=modSel.size;const b=$('modSelBtn');if(b){b.textContent='Zatwierdź zaznaczone ('+n+')';b.disabled=n===0;b.style.opacity=n?'1':'.5';}}
@@ -362,7 +362,7 @@ function renderCollections(){
   let html=`<div class="panel"><div class="panel-h"><h3>Przepis dnia</h3></div><div style="padding:16px 18px">
     <p class="muted-cell" style="margin-bottom:10px">Jeden przepis wyróżniony na samej górze strony głównej aplikacji.</p>
     <div class="tools">
-      <select id="rodSel" style="min-width:260px;width:auto">${['<option value="">— wybierz przepis —</option>'].concat(approved.map(r=>`<option value="${r.id}" ${rod===r.id?'selected':''}>${esc(r.title)}</option>`)).join('')}</select>
+      <select id="rodSel" style="min-width:260px;width:auto">${['<option value="">- wybierz przepis -</option>'].concat(approved.map(r=>`<option value="${r.id}" ${rod===r.id?'selected':''}>${esc(r.title)}</option>`)).join('')}</select>
       <button class="btn gold sm" onclick="setRecipeOfDay(document.getElementById('rodSel').value)">Ustaw</button>
       ${rod?`<button class="btn ghost sm" onclick="setRecipeOfDay('')">Wyczyść</button>`:''}
     </div>
@@ -392,7 +392,7 @@ function renderCollections(){
       </div></div>
       <div style="padding:10px 18px 16px">
         ${c.subtitle?`<p class="muted-cell" style="margin-bottom:10px">${esc(c.subtitle)}</p>`:''}
-        ${recs.length?('<table><tbody>'+recs.map((x,i)=>`<tr><td><b>${esc(rMap[x.recipe_id]||'—')}</b></td><td style="text-align:right;width:1%;white-space:nowrap"><div class="row" style="justify-content:flex-end"><button class="btn ghost sm" onclick="moveRecipeInCol('${c.id}','${x.recipe_id}',-1)" ${i===0?'disabled':''}>↑</button><button class="btn ghost sm" onclick="moveRecipeInCol('${c.id}','${x.recipe_id}',1)" ${i===recs.length-1?'disabled':''}>↓</button><button class="btn danger sm" onclick="removeFromCollection('${c.id}','${x.recipe_id}')">Usuń</button></div></td></tr>`).join('')+'</tbody></table>'):'<div class="empty">Brak przepisów w tej kolekcji.</div>'}
+        ${recs.length?('<table><tbody>'+recs.map((x,i)=>`<tr><td><b>${esc(rMap[x.recipe_id]||'-')}</b></td><td style="text-align:right;width:1%;white-space:nowrap"><div class="row" style="justify-content:flex-end"><button class="btn ghost sm" onclick="moveRecipeInCol('${c.id}','${x.recipe_id}',-1)" ${i===0?'disabled':''}>↑</button><button class="btn ghost sm" onclick="moveRecipeInCol('${c.id}','${x.recipe_id}',1)" ${i===recs.length-1?'disabled':''}>↓</button><button class="btn danger sm" onclick="removeFromCollection('${c.id}','${x.recipe_id}')">Usuń</button></div></td></tr>`).join('')+'</tbody></table>'):'<div class="empty">Brak przepisów w tej kolekcji.</div>'}
         <div class="tools" style="margin-top:12px">
           <select id="add_${c.id}" style="min-width:240px;width:auto">${['<option value="">+ dodaj przepis…</option>'].concat(avail.map(r=>`<option value="${r.id}">${esc(r.title)}</option>`)).join('')}</select>
           <button class="btn gold sm" onclick="addToCollection('${c.id}',document.getElementById('add_${c.id}').value)">Dodaj</button>
@@ -423,7 +423,7 @@ async function editCollection(id){
   toast('Zapisano');await refreshAll();
 }
 async function deleteCollection(id){
-  if(!confirm('Usunąć kolekcję? Przepisy zostają w bazie — znika tylko zestaw.'))return;
+  if(!confirm('Usunąć kolekcję? Przepisy zostają w bazie - znika tylko zestaw.'))return;
   const {error}=await sb.from('collections').delete().eq('id',id);
   if(error){toast('Błąd: '+error.message);return;}
   toast('Usunięto kolekcję');await refreshAll();
@@ -470,12 +470,12 @@ function renderRecipeRows(list){
     else if(r.status==='approved')act+=`<button class="btn sm ghost" onclick="setStatus('${r.id}','rejected')">Ukryj</button><button class="btn sm ${r.featured?'gold':'ghost'}" onclick="setFeatured('${r.id}',${r.featured?'false':'true'})">${r.featured?'★ Wyróżniony':'☆ Wyróżnij'}</button>`;
     else act+=`<button class="btn sm" onclick="approve('${r.id}')">Opublikuj</button>`;
     if(isAdmin())act+=`<button class="btn sm danger" onclick="delRecipe('${r.id}','${esc((r.title||'').replace(/'/g,""))}')">Usuń</button>`;
-    return `<tr><td><b>${esc(r.title)}</b></td><td class="muted-cell">${esc(uMap[r.author_id]||'—')}</td><td>${statusBadge(r.status)}</td><td class="muted-cell">${r.rating_avg?('★ '+r.rating_avg+' ('+(r.rating_count||0)+')'):'—'}</td><td class="muted-cell">${fmtD(r.created_at)}</td><td><div class="row">${act}</div></td></tr>`;
+    return `<tr><td><b>${esc(r.title)}</b></td><td class="muted-cell">${esc(uMap[r.author_id]||'-')}</td><td>${statusBadge(r.status)}</td><td class="muted-cell">${r.rating_avg?('★ '+r.rating_avg+' ('+(r.rating_count||0)+')'):'-'}</td><td class="muted-cell">${fmtD(r.created_at)}</td><td><div class="row">${act}</div></td></tr>`;
   }).join('')+'</tbody></table>';
 }
 
 function ago(ts){
-  if(!ts)return '—';
+  if(!ts)return '-';
   const d=(Date.now()-new Date(ts).getTime())/1000;
   if(d<60)return 'przed chwilą';
   if(d<3600)return Math.floor(d/60)+' min temu';
@@ -504,10 +504,10 @@ function renderUsers(){
     const sameMe=u.id===me.id;
     const online=u.last_seen&&(Date.now()-new Date(u.last_seen).getTime()<3e5);
     const sel='<select onchange="changeRole(\''+u.id+'\',this.value)" style="width:auto;padding:6px 9px">'+roles.map(r=>`<option value="${r}" ${u.role===r?'selected':''}>${r}</option>`).join('')+'</select>';
-    const blockBtn=sameMe?'<span class="muted-cell">—</span>':`<button class="btn sm ${u.blocked?'gold':'danger'}" onclick="toggleBlocked('${u.id}',${u.blocked?'false':'true'})">${u.blocked?'Odblokuj':'Zablokuj'}</button>`;
+    const blockBtn=sameMe?'<span class="muted-cell">-</span>':`<button class="btn sm ${u.blocked?'gold':'danger'}" onclick="toggleBlocked('${u.id}',${u.blocked?'false':'true'})">${u.blocked?'Odblokuj':'Zablokuj'}</button>`;
     const resetBtn=`<button class="btn sm ghost" onclick="resetUserPass('${u.id}')">Reset hasła</button>`;
-    const nameCell=`<b>${esc(u.display_name||'—')}</b>${sameMe?' <span class="muted-cell">(Ty)</span>':''}${u.blocked?' <span class="badge b-rejected">Zablokowany</span>':''}${u.email?`<div class="muted-cell">${esc(u.email)}</div>`:''}`;
-    const actCell=`<div>${online?'<span style="color:#2f8a4e">● online</span>':('ost. aktywność: '+ago(u.last_seen))}</div><div class="muted-cell">logowanie: ${u.last_sign_in_at?ago(u.last_sign_in_at):'—'}</div>`;
+    const nameCell=`<b>${esc(u.display_name||'-')}</b>${sameMe?' <span class="muted-cell">(Ty)</span>':''}${u.blocked?' <span class="badge b-rejected">Zablokowany</span>':''}${u.email?`<div class="muted-cell">${esc(u.email)}</div>`:''}`;
+    const actCell=`<div>${online?'<span style="color:#2f8a4e">● online</span>':('ost. aktywność: '+ago(u.last_seen))}</div><div class="muted-cell">logowanie: ${u.last_sign_in_at?ago(u.last_sign_in_at):'-'}</div>`;
     return `<tr><td>${nameCell}</td><td>${sel}</td><td><button class="btn sm ${u.is_premium?'gold':'ghost'}" onclick="togglePremium('${u.id}',${u.is_premium?'false':'true'})">${u.is_premium?'Premium ✓':'Ustaw premium'}</button></td><td style="font-size:12px">${actCell}</td><td><div class="row">${resetBtn}${blockBtn}</div></td></tr>`;
   }).join('')+'</tbody></table></div>';
   $('view').innerHTML=html;
@@ -516,7 +516,7 @@ function renderUsers(){
 function renderComments(){
   let html='<div class="panel"><div class="panel-h"><h3>Komentarze ('+db.comments.length+')</h3></div>';
   if(!db.comments.length){html+='<div class="empty">Brak komentarzy.</div></div>';$('view').innerHTML=html;return;}
-  html+='<table><thead><tr><th>Autor</th><th>Przepis</th><th>Treść</th><th>Data</th><th></th></tr></thead><tbody>'+db.comments.map(c=>`<tr><td><b>${esc(uMap[c.author_id]||'—')}</b></td><td class="muted-cell">${esc(rMap[c.recipe_id]||'—')}</td><td>${esc(c.body)}</td><td class="muted-cell">${fmtD(c.created_at)}</td><td><button class="btn sm danger" onclick="delComment('${c.id}')">Usuń</button></td></tr>`).join('')+'</tbody></table></div>';
+  html+='<table><thead><tr><th>Autor</th><th>Przepis</th><th>Treść</th><th>Data</th><th></th></tr></thead><tbody>'+db.comments.map(c=>`<tr><td><b>${esc(uMap[c.author_id]||'-')}</b></td><td class="muted-cell">${esc(rMap[c.recipe_id]||'-')}</td><td>${esc(c.body)}</td><td class="muted-cell">${fmtD(c.created_at)}</td><td><button class="btn sm danger" onclick="delComment('${c.id}')">Usuń</button></td></tr>`).join('')+'</tbody></table></div>';
   $('view').innerHTML=html;
 }
 
@@ -568,12 +568,12 @@ async function bulkImport(){
       if(ings.length)await sb.from('recipe_ingredients').insert(ings);
       const steps=(it.steps||[]).map((b,i)=>({recipe_id:rid,position:i,body:String(b)}));
       if(steps.length)await sb.from('recipe_steps').insert(steps);
-      if(it.status==='approved'||it.status==='pending'){const {error:se}=await sb.from('recipes').update({status:it.status}).eq('id',rid);if(se){errs.push('#'+(idx+1)+' ('+it.title+'): status — '+se.message);}}
+      if(it.status==='approved'||it.status==='pending'){const {error:se}=await sb.from('recipes').update({status:it.status}).eq('id',rid);if(se){errs.push('#'+(idx+1)+' ('+it.title+'): status - '+se.message);}}
       if(it.featured){await sb.from('recipes').update({featured:false}).eq('featured',true);await sb.from('recipes').update({featured:true}).eq('id',rid);}
       ok++;
     }catch(e){errs.push('#'+(idx+1)+': '+(e.message||e));}
   }
-  $('bulkResult').innerHTML='<div style="padding:6px 0;font-size:14px"><b style="color:#2f6b46">Dodano: '+ok+'</b>'+(errs.length?' · <b style="color:#9b3b32">Pominięto: '+errs.length+'</b><ul style="margin:8px 0 0 18px;font-size:12.5px;color:#9b3b32;line-height:1.6">'+errs.map(e=>'<li>'+esc(e)+'</li>').join('')+'</ul>':' — wszystko OK ✓')+'</div>';
+  $('bulkResult').innerHTML='<div style="padding:6px 0;font-size:14px"><b style="color:#2f6b46">Dodano: '+ok+'</b>'+(errs.length?' · <b style="color:#9b3b32">Pominięto: '+errs.length+'</b><ul style="margin:8px 0 0 18px;font-size:12.5px;color:#9b3b32;line-height:1.6">'+errs.map(e=>'<li>'+esc(e)+'</li>').join('')+'</ul>':' - wszystko OK ✓')+'</div>';
   await refreshAll();
 }
 
@@ -621,7 +621,7 @@ async function openEditor(id){
   foot+=`<button class="btn ghost" onclick="closeModal()">Zamknij</button>`;
   $('modalBox').innerHTML=`
     <h3>${id?'Edytuj przepis':'Nowy przepis'}</h3>
-    ${id?`<div class="muted" style="margin-bottom:10px">Status: ${statusBadge(r.status)} · Autor: ${esc(uMap[r.author_id]||'—')}</div>`:''}
+    ${id?`<div class="muted" style="margin-bottom:10px">Status: ${statusBadge(r.status)} · Autor: ${esc(uMap[r.author_id]||'-')}</div>`:''}
     <div class="sec"><label>Nazwa</label><input id="e_title" value="${esc(r.title)}"></div>
     <div class="sec grid2"><div><label>Trudność</label><select id="e_diff">${diff}</select></div><div><label>Czas (min)</label><input id="e_time" value="${r.time_min||''}" inputmode="numeric"></div><div><label>Kcal</label><input id="e_kcal" value="${r.kcal||''}" inputmode="numeric"></div></div>
     <div class="sec"><label>Opis</label><textarea id="e_desc" rows="2">${esc(r.description)}</textarea></div>
@@ -697,7 +697,7 @@ async function createUserForm(){
   const r=await adminAction('create_user',{email,display_name:name||undefined,password:pass||undefined});
   if(r.error){$('nu_result').innerHTML='<span style="color:#9b3b32">'+esc(r.error)+'</span>';return;}
   const pw=r.data&&r.data.password;
-  $('nu_result').innerHTML='<span style="color:#2f6b46">Utworzono konto '+esc(email)+'.</span>'+(pw?(' Hasło tymczasowe: <b>'+esc(pw)+'</b> <span class="muted-cell">— skopiuj i przekaż, nie pojawi się ponownie.</span>'):'');
+  $('nu_result').innerHTML='<span style="color:#2f6b46">Utworzono konto '+esc(email)+'.</span>'+(pw?(' Hasło tymczasowe: <b>'+esc(pw)+'</b> <span class="muted-cell">- skopiuj i przekaż, nie pojawi się ponownie.</span>'):'');
   $('nu_email').value='';$('nu_name').value='';$('nu_pass').value='';
   await refreshAll();setView('users');
 }
@@ -734,14 +734,14 @@ function renderPush(){
   let html=`<div class="panel"><div class="panel-h"><h3>Wyślij powiadomienie</h3></div>
   <div style="padding:16px 18px;max-width:560px">
     <p id="pushAudience" class="muted-cell" style="margin:0 0 4px">Subskrybentów: …</p>
-    <p class="muted-cell" style="margin:0 0 6px;font-size:12.5px;line-height:1.6">Push dociera do osób, które włączyły powiadomienia na urządzeniu. Aby dotrzeć do <b>wszystkich</b> użytkowników, zaznacz opcję „Pokaż też jako ogłoszenie" — pojawi się w aplikacji u każdego.</p>
+    <p class="muted-cell" style="margin:0 0 6px;font-size:12.5px;line-height:1.6">Push dociera do osób, które włączyły powiadomienia na urządzeniu. Aby dotrzeć do <b>wszystkich</b> użytkowników, zaznacz opcję „Pokaż też jako ogłoszenie" - pojawi się w aplikacji u każdego.</p>
     <label style="display:block;margin:12px 0 5px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold2);font-weight:600">Tytuł</label>
     <input id="pushTitle" maxlength="120" placeholder="np. Nowy przepis w Molly's Table!" oninput="updatePushPreview()">
     <label style="display:block;margin:12px 0 5px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold2);font-weight:600">Treść</label>
     <textarea id="pushBody" rows="3" maxlength="300" placeholder="Treść powiadomienia…" oninput="updatePushPreview()"></textarea>
     <label style="display:block;margin:12px 0 5px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold2);font-weight:600">Link po kliknięciu (opcjonalnie)</label>
     <input id="pushUrl" placeholder="/">
-    <label class="pushcheck"><input type="checkbox" id="pushAsAnn"> <span>Pokaż też jako ogłoszenie w aplikacji <b>— dotrze do wszystkich użytkowników</b></span></label>
+    <label class="pushcheck"><input type="checkbox" id="pushAsAnn"> <span>Pokaż też jako ogłoszenie w aplikacji <b>- dotrze do wszystkich użytkowników</b></span></label>
     <div class="pushprev-wrap"><div class="pushprev-lbl">Podgląd powiadomienia</div>
       <div class="pushprev"><div class="pp-ic"><img src="logo/molly_head_gold.png" alt="" onerror="this.style.display='none'"></div><div class="pp-tx"><b id="ppTitle">Tytuł powiadomienia</b><span id="ppBody">Treść pojawi się tutaj…</span></div></div>
     </div>
@@ -781,7 +781,7 @@ async function sendBroadcastPush(){
     try{
       const {error}=await sb.from('announcements').insert({title,body:body||title,created_by:me.id});
       if(error) throw error;
-      if(status) status.textContent='Wysłano do wszystkich ✓ — widoczne w aplikacji u każdego, push u subskrybentów.';
+      if(status) status.textContent='Wysłano do wszystkich ✓ - widoczne w aplikacji u każdego, push u subskrybentów.';
       document.getElementById('pushTitle').value='';document.getElementById('pushBody').value='';document.getElementById('pushAsAnn').checked=false;updatePushPreview();
     }catch(e){ if(status) status.textContent='Błąd: '+(e.message||e); }
     return;
