@@ -870,6 +870,35 @@ body.t-light .fc-chip.on .fc-chip-av{background-color:var(--green);color:#fff}
 .fc-tab td{padding:9px 14px;border-bottom:1px solid rgba(143,127,72,.12);color:#23302B}
 .fc-tab tr:last-child td{border-bottom:none}
 .fc-tab td b{color:#5f5430;font-size:15px}
+.cookbtn{display:flex;align-items:center;gap:12px;width:100%;margin:4px 0 18px;padding:14px 16px;border-radius:16px;border:1.5px solid rgba(143,127,72,.45);background:#fff;color:#23302B;font-family:var(--sans);cursor:pointer;text-align:left;transition:background .15s,border-color .15s}
+.cookbtn:hover{background:#2A3431;color:#F4EEE1;border-color:#2A3431}
+.cookbtn .ci{flex:0 0 auto;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:rgba(143,127,72,.16);color:#5f5430}
+.cookbtn:hover .ci{background:rgba(244,238,225,.16);color:var(--gold)}
+.cookbtn .ci svg{width:17px;height:17px}
+.cookbtn b{display:block;font-size:15px;font-weight:600}
+.cookbtn small{display:block;font-size:12px;opacity:.75;margin-top:2px}
+.cookmode{position:fixed;inset:0;z-index:300;background:linear-gradient(170deg,#1F2A26,#141C19);color:#F4EEE1;display:flex;flex-direction:column;padding:calc(env(safe-area-inset-top) + 14px) 20px calc(env(safe-area-inset-bottom) + 18px);animation:pgfade .2s ease}
+.cook-top{display:flex;align-items:center;justify-content:space-between;flex:0 0 auto}
+.cook-lock{display:flex;align-items:center;gap:8px;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:#9aa69d}
+.cook-lock .dot{width:8px;height:8px;border-radius:50%;background:#3a9d5d}
+.cook-lock .dot.off{background:#c9a227}
+.cook-x{width:40px;height:40px;border-radius:50%;border:1.5px solid rgba(244,238,225,.25);background:transparent;color:#F4EEE1;cursor:pointer;display:grid;place-items:center}
+.cook-body{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0;overflow-y:auto;padding:20px 0}
+.cook-count{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);font-weight:600}
+.cook-prog{height:3px;background:rgba(244,238,225,.14);border-radius:999px;margin:10px 0 22px;overflow:hidden}
+.cook-prog i{display:block;height:100%;background:linear-gradient(90deg,#CDBF86,var(--gold));border-radius:999px;transition:width .3s}
+.cook-step{font-family:var(--serif);font-size:clamp(22px,6vw,34px);line-height:1.35;font-weight:500}
+.cook-ings{margin-top:26px;border-top:1px solid rgba(244,238,225,.14);padding-top:14px}
+.cook-ings summary{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);cursor:pointer;font-weight:600}
+.cook-ings ul{list-style:none;margin-top:12px}
+.cook-ings li{display:flex;justify-content:space-between;gap:14px;padding:9px 0;border-bottom:1px dashed rgba(244,238,225,.12);font-size:14.5px}
+.cook-ings li b{color:var(--gold);white-space:nowrap}
+.cook-nav{flex:0 0 auto;display:flex;gap:10px;align-items:center}
+.cook-nav button{font-family:var(--sans);font-size:15px;font-weight:600;border-radius:14px;cursor:pointer;padding:16px}
+.cook-prev{flex:0 0 auto;background:transparent;border:1.5px solid rgba(244,238,225,.28);color:#F4EEE1;display:flex;align-items:center;gap:8px}
+.cook-prev svg{width:16px;height:16px}
+.cook-prev:disabled{opacity:.35}
+.cook-next{flex:1;background:linear-gradient(135deg,#CDBF86,var(--gold) 55%,#a8975c);border:none;color:var(--forest)}
 .dogswitch{display:flex;gap:8px;overflow-x:auto;padding:14px 0 2px;scrollbar-width:none}
 .dogswitch::-webkit-scrollbar{display:none}
 .dsw{flex:0 0 auto;display:flex;align-items:center;gap:8px;padding:7px 14px 7px 7px;border-radius:999px;border:1.5px solid var(--line);background:rgba(244,238,225,.05);color:inherit;font-family:var(--sans);font-size:13px;font-weight:500;cursor:pointer;transition:border-color .15s,background .15s}
@@ -2418,6 +2447,58 @@ function calcRecipeScaleHTML(w,r){
     <p class="fc-tip">Po ugotowaniu odważ porcje po <b>${dailyR} g</b>, jedną zostaw na najbliższy ${plDni(1)}, a pozostałe zamroź.</p>
     <button type="button" class="fc-planbtn" onclick="planForDays(3)">Dodaj do planera na 3 dni</button>`;
 }
+let cookWake=null, cookStepIdx=0, cookRecipeId=null, cookDone=new Set();
+async function cookAcquire(){
+  try{
+    if(!('wakeLock' in navigator))return false;
+    if(cookWake&&!cookWake.released)return true;
+    cookWake=await navigator.wakeLock.request('screen');
+    cookWake.addEventListener('release',()=>{const b=document.getElementById('cookLockState');if(b)b.textContent='ekran może zgasnąć';});
+    return true;
+  }catch(e){return false;}
+}
+async function cookRelease(){try{if(cookWake&&!cookWake.released)await cookWake.release();}catch(_){}cookWake=null;}
+async function cookStart(id){
+  cookRecipeId=id;cookStepIdx=0;cookDone=new Set();
+  const ok=await cookAcquire();
+  cookRender(ok);
+  if(!document.getElementById('_cookVis')){
+    const m=document.createElement('meta');m.id='_cookVis';document.head.appendChild(m);
+    document.addEventListener('visibilitychange',async()=>{
+      if(document.getElementById('cookmode')){
+        if(document.visibilityState==='visible'){const o=await cookAcquire();const st=document.getElementById('cookLockState');if(st)st.textContent=o?'ekran nie zgaśnie':'ekran może zgasnąć';}
+      }
+    });
+  }
+}
+async function cookExit(){await cookRelease();const el=document.getElementById('cookmode');if(el)el.remove();}
+function cookRender(lockOk){
+  const r=findRecipe(cookRecipeId); if(!r)return;
+  const steps=r.steps||[]; const i=Math.max(0,Math.min(cookStepIdx,steps.length-1));
+  const ings=(r.ing||[]).map(x=>`<li><span>${x[0]}</span><b>${x[1]||''}</b></li>`).join('');
+  const lockTxt=(lockOk===undefined)?(cookWake?'ekran nie zgaśnie':'ekran może zgasnąć'):(lockOk?'ekran nie zgaśnie':'ekran może zgasnąć');
+  const html=`<div class="cook-top">
+      <div class="cook-lock"><span class="dot ${lockOk===false?'off':'on'}"></span><span id="cookLockState">${lockTxt}</span></div>
+      <button type="button" class="cook-x" onclick="cookExit()" aria-label="Zakończ">${ico('x')}</button>
+    </div>
+    <div class="cook-body">
+      <div class="cook-count">Krok ${i+1} z ${steps.length}</div>
+      <div class="cook-prog"><i style="width:${((i+1)/steps.length*100).toFixed(1)}%"></i></div>
+      <p class="cook-step">${steps[i]||''}</p>
+      <details class="cook-ings"><summary>Składniki (${(r.ing||[]).length})</summary><ul>${ings}</ul></details>
+    </div>
+    <div class="cook-nav">
+      <button type="button" class="cook-prev" onclick="cookGo(-1)" ${i===0?'disabled':''}>${ico('arrow')} Wstecz</button>
+      ${i<steps.length-1
+        ? `<button type="button" class="cook-next" onclick="cookGo(1)">Dalej</button>`
+        : `<button type="button" class="cook-next" onclick="cookFinish()">Gotowe ✓</button>`}
+    </div>`;
+  let el=document.getElementById('cookmode');
+  if(!el){el=document.createElement('div');el.id='cookmode';el.className='cookmode';document.body.appendChild(el);}
+  el.innerHTML=html;
+}
+function cookGo(d){const r=findRecipe(cookRecipeId);if(!r)return;const n=(r.steps||[]).length;cookStepIdx=Math.max(0,Math.min(cookStepIdx+d,n-1));cookRender();}
+async function cookFinish(){await cookExit();toast('Smacznego! 🐾');}
 function calcOutHTML(w){
   if(!(w>0))return '<p class="fc-err">Podaj wagę psa większą od zera.</p>';
   const _r=(typeof _detailId!=='undefined'&&_detailId)?findRecipe(_detailId):null;
@@ -2527,6 +2608,7 @@ function paintDetail(id){
         <div id="calcBody"></div>
       </div>
       <h3>Przygotowanie</h3>
+      ${(!loading&&r.steps&&r.steps.length)?`<button type="button" class="cookbtn" onclick="cookStart('${r.id}')"><span class="ci">${ico('check')}</span><span><b>Tryb gotowania</b><small>Duże kroki, ekran nie zgaśnie</small></span></button>`:''}
       ${loading?dload('Ładowanie kroków…'):r.steps.map((s,n)=>`<div class="step"><div class="n">${n+1}</div><p>${s}</p></div>`).join('')}
       ${(r.good&&r.good.length)||(r.bad&&r.bad.length)?`<h3>Dla jakich psów</h3>
       <div class="tagline">${(r.good||[]).map(g=>`<span class="fit ok">${ico('check')} ${g}</span>`).join('')}</div>
