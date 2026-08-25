@@ -608,6 +608,23 @@ body.t-light .brandbar::after{content:"";width:42px;height:1px;background:linear
 .favmore{width:100%;margin-top:12px;background:none;border:1px dashed var(--line);border-radius:12px;padding:11px;color:var(--gold);font-family:var(--sans);font-size:12.5px;letter-spacing:.04em;cursor:pointer;transition:.15s}
 .favmore:active{transform:scale(.985)}.wchart{color:var(--gold);margin:2px 0 12px;border:1px solid var(--line);border-radius:14px;padding:14px 14px 8px;background:rgba(143,127,72,.06)}
 .wchart .wlabels{display:flex;justify-content:space-between;font-size:10px;letter-spacing:.06em;color:#9aa69d;margin-top:4px}
+.wchart .wlabels{font-size:11px}
+.wchart .wnow b{color:var(--ivory);font-weight:600}
+body.t-light .wchart .wnow b{color:#23302B}
+.wchart .wnow i{font-style:normal;font-weight:600;margin-left:5px;padding:1px 6px;border-radius:999px;font-size:10px}
+.wchart .wnow i.up{color:#c9a227;background:rgba(201,162,39,.14)}
+.wchart .wnow i.down{color:#3a9d5d;background:rgba(58,157,93,.14)}
+.cropper{position:fixed;inset:0;z-index:320;background:rgba(20,26,23,.82);backdrop-filter:blur(5px);display:flex;align-items:center;justify-content:center;padding:22px;animation:pgfade .18s ease}
+.crop-box{background:var(--ivory);color:#23302B;border-radius:24px;padding:24px 22px 20px;max-width:360px;width:100%;text-align:center;box-shadow:0 30px 80px -20px rgba(0,0,0,.6)}
+.crop-box h3{font-family:var(--serif);font-size:21px;font-weight:500}
+.crop-box p{font-size:13px;color:#5a635b;margin:6px 0 16px;line-height:1.5}
+.crop-stage{position:relative;width:280px;height:280px;margin:0 auto;border-radius:18px;overflow:hidden;touch-action:none;cursor:grab;background:#1C2420}
+.crop-stage:active{cursor:grabbing}
+.crop-stage canvas{display:block}
+.crop-ring{position:absolute;inset:0;pointer-events:none;box-shadow:0 0 0 9999px rgba(20,26,23,.55) inset;border-radius:50%;outline:2px solid rgba(191,177,120,.85);outline-offset:-2px}
+#cropZoom{width:100%;margin:18px 0 6px;accent-color:var(--gold2)}
+.crop-btns{display:flex;gap:10px;margin-top:10px}
+.crop-btns .outbtn{flex:0 0 auto}
 .wlist{margin:2px 0 12px}
 .wrow{display:flex;justify-content:space-between;align-items:center;padding:9px 2px;border-bottom:1px solid var(--line);font-size:13px}
 .wrow span{color:#8a9189}
@@ -2125,6 +2142,10 @@ function toggleFavs(){state.favsOpen=!state.favsOpen;render();}
 function toggleWeight(){state.weightOpen=!state.weightOpen;render();}
 function weightChartSVG(ws){
   const W=300,H=120,P=18;const ks=ws.map(w=>w.kg);const min=Math.min(...ks),max=Math.max(...ks);const span=(max-min)||1;const n=ws.length;
+  const first=ws[0].kg, last=ws[ws.length-1].kg;
+  const firstDate=(()=>{try{return ws[0].date?new Date(ws[0].date).toLocaleDateString('pl-PL',{day:'numeric',month:'short'}):'';}catch(e){return '';}})();
+  const diff=Math.round((last-first)*10)/10;
+  const diffTxt=(n<2||diff===0)?'':` <i class="${diff>0?'up':'down'}">${diff>0?'+':''}${String(diff).replace('.',',')} kg</i>`;
   const x=i=>P+(n===1?0:(i*(W-2*P)/(n-1)));
   const y=k=>H-P-((k-min)/span)*(H-2*P);
   const pts=ws.map((w,i)=>`${x(i).toFixed(1)},${y(w.kg).toFixed(1)}`).join(' ');
@@ -2132,7 +2153,7 @@ function weightChartSVG(ws){
   return `<div class="wchart"><svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto">
     <polyline fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" points="${pts}"/>
     <g fill="currentColor">${dots}</g></svg>
-    <div class="wlabels"><span>min ${min} kg</span><span>maks ${max} kg</span></div></div>`;
+    <div class="wlabels"><span>start ${first} kg${firstDate?' · '+firstDate:''}</span><span class="wnow">teraz <b>${last} kg</b>${diffTxt}</span></div></div>`;
 }
 async function addWeight(){
   const d=activeDog();if(!d){toast('Najpierw dodaj profil psa');return;}
@@ -2344,9 +2365,68 @@ function onPhotoPick(e){
 }
 function onDogPhotoPick(e){
   const f=e.target.files&&e.target.files[0];if(!f)return;
-  pendingDogPhoto=f;
-  const av=$('d_photo_av');
-  if(av){const url=URL.createObjectURL(f);av.style.backgroundImage=`url('${url}')`;av.innerHTML='';}
+  openCropper(f);
+  e.target.value='';
+}
+/* ---- Kadrowanie zdjęcia psa: przesuwanie + powiększanie, wynik 512x512 ---- */
+let _crop={img:null,scale:1,min:1,x:0,y:0,drag:false,lx:0,ly:0,box:280};
+function openCropper(file){
+  const url=URL.createObjectURL(file);
+  const img=new Image();
+  img.onload=()=>{
+    const B=_crop.box;
+    const min=Math.max(B/img.width,B/img.height);
+    _crop={img,scale:min,min,x:0,y:0,drag:false,lx:0,ly:0,box:B};
+    const el=document.createElement('div');
+    el.id='cropper';el.className='cropper';
+    el.innerHTML=`<div class="crop-box">
+      <h3>Wybierz kadr</h3>
+      <p>Przesuń zdjęcie palcem i dopasuj powiększenie.</p>
+      <div class="crop-stage" id="cropStage"><canvas id="cropCv" width="${B}" height="${B}"></canvas><div class="crop-ring"></div></div>
+      <input id="cropZoom" type="range" min="1" max="3" step="0.01" value="1" oninput="cropZoom(this.value)">
+      <div class="crop-btns"><button type="button" class="outbtn" onclick="closeCropper()">Anuluj</button><button type="button" class="btn btn-gold" style="margin:0;flex:1" onclick="cropSave()">Użyj zdjęcia</button></div>
+    </div>`;
+    document.body.appendChild(el);
+    cropDraw();
+    const st=document.getElementById('cropStage');
+    const down=ev=>{_crop.drag=true;const p=cropPt(ev);_crop.lx=p.x;_crop.ly=p.y;ev.preventDefault();};
+    const move=ev=>{if(!_crop.drag)return;const p=cropPt(ev);_crop.x+=p.x-_crop.lx;_crop.y+=p.y-_crop.ly;_crop.lx=p.x;_crop.ly=p.y;cropClamp();cropDraw();ev.preventDefault();};
+    const up=()=>{_crop.drag=false;};
+    st.addEventListener('mousedown',down);st.addEventListener('touchstart',down,{passive:false});
+    window.addEventListener('mousemove',move);st.addEventListener('touchmove',move,{passive:false});
+    window.addEventListener('mouseup',up);st.addEventListener('touchend',up);
+  };
+  img.onerror=()=>toast('Nie udało się otworzyć zdjęcia');
+  img.src=url;
+}
+function cropPt(ev){const t=(ev.touches&&ev.touches[0])||ev;return {x:t.clientX,y:t.clientY};}
+function cropZoom(v){const f=parseFloat(v)||1;_crop.scale=_crop.min*f;cropClamp();cropDraw();}
+function cropClamp(){
+  const {img,scale,box}=_crop;if(!img)return;
+  const w=img.width*scale,h=img.height*scale;
+  _crop.x=Math.min(0,Math.max(box-w,_crop.x));
+  _crop.y=Math.min(0,Math.max(box-h,_crop.y));
+}
+function cropDraw(){
+  const cv=document.getElementById('cropCv');if(!cv||!_crop.img)return;
+  const ctx=cv.getContext('2d');const {img,scale,x,y,box}=_crop;
+  ctx.clearRect(0,0,box,box);ctx.fillStyle='#1C2420';ctx.fillRect(0,0,box,box);
+  ctx.drawImage(img,x,y,img.width*scale,img.height*scale);
+}
+function closeCropper(){const el=document.getElementById('cropper');if(el)el.remove();_crop.img=null;}
+function cropSave(){
+  const {img,scale,x,y,box}=_crop;if(!img)return;
+  const S=512,k=S/box;
+  const cv=document.createElement('canvas');cv.width=S;cv.height=S;
+  const ctx=cv.getContext('2d');ctx.fillStyle='#1C2420';ctx.fillRect(0,0,S,S);
+  ctx.drawImage(img,x*k,y*k,img.width*scale*k,img.height*scale*k);
+  cv.toBlob(b=>{
+    if(!b){toast('Nie udało się przyciąć zdjęcia');return;}
+    pendingDogPhoto=new File([b],'dog.jpg',{type:'image/jpeg'});
+    const av=$('d_photo_av');
+    if(av){av.style.backgroundImage=`url('${cv.toDataURL('image/jpeg',0.9)}')`;av.innerHTML='';}
+    closeCropper();toast('Kadr zapisany');
+  },'image/jpeg',0.88);
 }
 function goCat(c){state.tab='recipes';state.cat=c;state.q='';render();}
 function goSearch(){state.tab='recipes';render();const s=$('search');if(s)s.focus();}
