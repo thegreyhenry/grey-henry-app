@@ -899,6 +899,24 @@ body.t-light .fc-chip.on .fc-chip-av{background-color:var(--green);color:#fff}
 .cook-prev svg{width:16px;height:16px}
 .cook-prev:disabled{opacity:.35}
 .cook-next{flex:1;background:linear-gradient(135deg,#CDBF86,var(--gold) 55%,#a8975c);border:none;color:var(--forest)}
+.ck-offer{margin-top:24px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:12.5px;color:#9aa69d}
+.ck-offer button{background:rgba(191,177,120,.14);border:1.5px solid rgba(191,177,120,.45);color:var(--gold);border-radius:999px;padding:9px 15px;font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer}
+.ck-offer button:hover{background:var(--gold);color:var(--forest)}
+.ck-box{margin-top:24px;display:flex;gap:18px;align-items:center;padding:16px;border-radius:18px;background:rgba(191,177,120,.1);border:1.5px solid rgba(191,177,120,.35)}
+.ck-box.done{background:rgba(58,157,93,.16);border-color:rgba(58,157,93,.5);animation:ckpulse 1s ease-in-out infinite}
+@keyframes ckpulse{0%,100%{box-shadow:0 0 0 0 rgba(58,157,93,.35)}50%{box-shadow:0 0 0 12px rgba(58,157,93,0)}}
+.ck-ring{position:relative;width:96px;height:96px;flex:0 0 auto}
+.ck-ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ck-ring circle{fill:none;stroke-width:7}
+.ck-ring .ck-bg{stroke:rgba(244,238,225,.14)}
+.ck-ring .ck-fg{stroke:var(--gold);stroke-linecap:round;stroke-dasharray:276;transition:stroke-dashoffset .3s linear}
+.ck-box.done .ck-fg{stroke:#3a9d5d}
+.ck-ring span{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--sans);font-size:21px;font-weight:600;letter-spacing:.02em}
+.ck-side{min-width:0;flex:1}
+.ck-lbl{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);font-weight:600;margin-bottom:10px}
+.ck-btns{display:flex;flex-wrap:wrap;gap:7px}
+.ck-btns button{background:transparent;border:1.5px solid rgba(244,238,225,.25);color:#F4EEE1;border-radius:999px;padding:8px 13px;font-family:var(--sans);font-size:12.5px;font-weight:600;cursor:pointer}
+.ck-btns button:hover{border-color:var(--gold);color:var(--gold)}
 .dogswitch{display:flex;gap:8px;overflow-x:auto;padding:14px 0 2px;scrollbar-width:none}
 .dogswitch::-webkit-scrollbar{display:none}
 .dsw{flex:0 0 auto;display:flex;align-items:center;gap:8px;padding:7px 14px 7px 7px;border-radius:999px;border:1.5px solid var(--line);background:rgba(244,238,225,.05);color:inherit;font-family:var(--sans);font-size:13px;font-weight:500;cursor:pointer;transition:border-color .15s,background .15s}
@@ -2471,7 +2489,85 @@ async function cookStart(id){
     });
   }
 }
-async function cookExit(){await cookRelease();const el=document.getElementById('cookmode');if(el)el.remove();}
+async function cookExit(){ckStop(true);await cookRelease();const el=document.getElementById('cookmode');if(el)el.remove();}
+let ckT=null, ckEnd=0, ckTotal=0, ckPaused=false, ckLeftPaused=0, ckLabel='';
+function cookParseMin(txt){
+  const t=String(txt||'').toLowerCase().replace(/–|—/g,'-');
+  const out=[];
+  let m=t.match(/(\d+)\s*-\s*(\d+)\s*min/);
+  if(m){out.push(parseInt(m[1],10),parseInt(m[2],10));return out;}
+  const re=/(\d+)\s*min/g; let x;
+  while((x=re.exec(t))!==null)out.push(parseInt(x[1],10));
+  return out.filter(n=>n>0&&n<=240);
+}
+function ckFmt(ms){const s=Math.max(0,Math.round(ms/1000));const m=Math.floor(s/60);return String(m).padStart(2,'0')+':'+String(s%60).padStart(2,'0');}
+function cookTimerHTML(){
+  const r=findRecipe(cookRecipeId); if(!r)return '';
+  const steps=r.steps||[]; const i=Math.max(0,Math.min(cookStepIdx,steps.length-1));
+  if(ckT||ckPaused){
+    const left=ckPaused?ckLeftPaused:(ckEnd-Date.now());
+    const pct=ckTotal>0?Math.max(0,Math.min(100,(1-left/ckTotal)*100)):0;
+    return `<div class="ck-box ${left<=0?'done':''}">
+      <div class="ck-ring"><svg viewBox="0 0 100 100"><circle class="ck-bg" cx="50" cy="50" r="44"/><circle class="ck-fg" cx="50" cy="50" r="44" style="stroke-dashoffset:${(276*(1-pct/100)).toFixed(1)}"/></svg><span id="ckNum">${ckFmt(left)}</span></div>
+      <div class="ck-side">
+        <div class="ck-lbl">${escH(ckLabel||'Minutnik')}</div>
+        <div class="ck-btns">
+          <button type="button" onclick="ckPauseToggle()">${ckPaused?'Wznów':'Pauza'}</button>
+          <button type="button" onclick="ckAdd(60)">+1 min</button>
+          <button type="button" onclick="ckStop()">Anuluj</button>
+        </div>
+      </div></div>`;
+  }
+  const mins=cookParseMin(steps[i]);
+  const opts=[...new Set(mins.length?mins:[5,10,15])];
+  return `<div class="ck-offer">${mins.length?'Ten krok wspomina o czasie:':'Ustaw minutnik:'}
+    ${opts.map(n=>`<button type="button" onclick="ckStart(${n},'Krok ${i+1}')">${n} min</button>`).join('')}</div>`;
+}
+function ckTick(){
+  const el=document.getElementById('ckNum'); if(!el)return;
+  const left=ckEnd-Date.now();
+  el.textContent=ckFmt(left);
+  const ring=document.querySelector('.ck-fg');
+  if(ring&&ckTotal>0)ring.style.strokeDashoffset=(276*(left/ckTotal)).toFixed(1);
+  if(left<=0)ckDone();
+}
+function ckStart(min,label){
+  ckStop(true);
+  ckTotal=min*60000; ckEnd=Date.now()+ckTotal; ckPaused=false; ckLabel=label||'';
+  ckT=setInterval(ckTick,250);
+  cookRender();
+}
+function ckPauseToggle(){
+  if(ckPaused){ckEnd=Date.now()+ckLeftPaused;ckPaused=false;ckT=setInterval(ckTick,250);}
+  else{ckLeftPaused=Math.max(0,ckEnd-Date.now());clearInterval(ckT);ckT=null;ckPaused=true;}
+  cookRender();
+}
+function ckAdd(sec){if(ckPaused)ckLeftPaused+=sec*1000;else ckEnd+=sec*1000;ckTotal+=sec*1000;cookRender();}
+function ckStop(silent){clearInterval(ckT);ckT=null;ckPaused=false;ckLeftPaused=0;ckTotal=0;ckEnd=0;ckLabel='';if(!silent)cookRender();}
+function ckBeep(){
+  try{
+    const A=window.AudioContext||window.webkitAudioContext; if(!A)return;
+    const ctx=new A();
+    [0,0.45,0.9].forEach(t=>{
+      const o=ctx.createOscillator(),g=ctx.createGain();
+      o.type='sine';o.frequency.value=880;
+      g.gain.setValueAtTime(0,ctx.currentTime+t);
+      g.gain.linearRampToValueAtTime(.35,ctx.currentTime+t+0.03);
+      g.gain.linearRampToValueAtTime(0,ctx.currentTime+t+0.32);
+      o.connect(g);g.connect(ctx.destination);o.start(ctx.currentTime+t);o.stop(ctx.currentTime+t+0.35);
+    });
+    setTimeout(()=>{try{ctx.close();}catch(_){}} ,1600);
+  }catch(_){}
+}
+function ckDone(){
+  clearInterval(ckT);ckT=null;
+  ckBeep();
+  try{if(navigator.vibrate)navigator.vibrate([300,150,300,150,300]);}catch(_){}
+  try{if('Notification' in window&&Notification.permission==='granted')new Notification('Minutnik — Molly\u2019s Table',{body:(ckLabel?ckLabel+': ':'')+'czas minął!',icon:'logo/icon-192.png',tag:'mt-timer'});}catch(_){}
+  const el=document.getElementById('ckNum'); if(el)el.textContent='00:00';
+  const box=document.querySelector('.ck-box'); if(box)box.classList.add('done');
+  toast('⏱ Czas minął!');
+}
 function cookRender(lockOk){
   const r=findRecipe(cookRecipeId); if(!r)return;
   const steps=r.steps||[]; const i=Math.max(0,Math.min(cookStepIdx,steps.length-1));
@@ -2485,6 +2581,7 @@ function cookRender(lockOk){
       <div class="cook-count">Krok ${i+1} z ${steps.length}</div>
       <div class="cook-prog"><i style="width:${((i+1)/steps.length*100).toFixed(1)}%"></i></div>
       <p class="cook-step">${steps[i]||''}</p>
+      ${cookTimerHTML()}
       <details class="cook-ings"><summary>Składniki (${(r.ing||[]).length})</summary><ul>${ings}</ul></details>
     </div>
     <div class="cook-nav">
