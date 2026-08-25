@@ -75,6 +75,8 @@ svg{display:block}
 .greetrow{padding-top:8px;padding-bottom:4px;text-align:center}
 .greetrow .greet{font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:#9aa69d}
 .greetrow b{display:block;font-family:var(--serif);font-size:23px;font-weight:500;margin-top:4px}
+.greetrow .greet-tag{display:block;font-size:12.5px;color:var(--gold);margin-top:6px;font-style:italic;letter-spacing:.01em}
+body.t-light .greetrow .greet-tag{color:var(--gold2)}
 
 .searchpill{width:100%;display:flex;align-items:center;gap:11px;background:rgba(244,238,225,.06);border:1px solid var(--line);border-radius:15px;padding:15px 16px;color:#9aa69d;font-family:var(--sans);font-size:14px;cursor:pointer;transition:.18s;margin-top:14px}
 .searchpill:hover{border-color:var(--gold)}
@@ -1584,6 +1586,13 @@ function setActiveDog(i,opts){const ds=state.dogs||[];if(i<0||i>=ds.length)retur
 function restoreActiveDog(){try{const k=localStorage.getItem('mt-dog');if(!k)return;const ds=state.dogs||[];const i=ds.findIndex(d=>(d.id||'')===k);if(i>=0)state.dogIdx=i;}catch(_){}}
 function dogSwitcherHTML(){const ds=state.dogs||[];if(ds.length<2)return '';const cur=state.dogIdx||0;
   return `<div class="pad"><div class="dogswitch">${ds.map((d,i)=>`<button type="button" class="dsw ${i===cur?'on':''}" onclick="setActiveDog(${i})"><span class="dsw-av"${d.photo?` style="background-image:url('${d.photo}')"`:''}>${d.photo?'':escH((d.name||'?').charAt(0).toUpperCase())}</span>${escH(d.name)}</button>`).join('')}</div></div>`;}
+function dogTagline(d){
+  if(!d||!d.note)return '';
+  let t=String(d.note).trim().split(/[.!?\n]/)[0].trim();
+  if(!t)return '';
+  if(t.length>64)t=t.slice(0,61).replace(/\s+\S*$/,'')+'…';
+  return t.charAt(0).toLowerCase()+t.slice(1);
+}
 function safeDog(){const d=activeDog();return (d&&dogAvoid(d).filter(Boolean).length)?d:null;}
 function safeList(arr){if(!state.safeMode)return arr;const d=safeDog();if(!d)return arr;return arr.filter(r=>recipeMatchesDog(r,d));}
 function isUnsafe(r){const d=safeDog();return !!(d&&!recipeMatchesDog(r,d));}
@@ -1640,7 +1649,7 @@ function renderHome(){
   const colHTML=cols.map(c=>{const recs=(state.colRecipes||[]).filter(x=>x.collection_id===c.id).sort((a,b)=>a.position-b.position).map(x=>findRecipe(x.recipe_id)).filter(Boolean);const recsS=safeList(recs);if(!recsS.length)return '';return `<div class="section-h pad"><h2>${escH(c.title)}</h2></div>${c.subtitle?`<p class="pad muted" style="margin:-6px 0 4px">${escH(c.subtitle)}</p>`:''}<div class="rail">${recsS.map(r=>recipeCardHTML(r)).join('')}</div>`;}).join('');
   return `
   <div class="brandbar"><img class="crest" src="${CREST}" alt="Molly's Table" loading="lazy" decoding="async">${state.user?`<button class="bell" onclick="openNotifsScreen()" aria-label="Powiadomienia">${ico('bell')}${(state.notifs||[]).filter(n=>!n.read).length?`<span class="bdot">${(state.notifs||[]).filter(n=>!n.read).length}</span>`:''}</button>`:''}</div>
-  <div class="pad greetrow"><span class="greet">Dzień dobry</span><b>${dog?('Gotujemy dla '+escH(dog.name)):"Molly's Table"}</b></div>
+  <div class="pad greetrow"><span class="greet">Dzień dobry</span><b>${dog?('Gotujemy dla '+escH(dog.name)):"Molly's Table"}</b>${(dog&&dogTagline(dog))?`<span class="greet-tag">${escH(dogTagline(dog))}</span>`:''}</div>
   ${state.user&&!state.dogs.length?`<div class="pad"><div class="onboard" onclick="goAddDog()"><div class="ob-i">${ico('user')}</div><div style="flex:1"><b>Dodaj profil swojego psa</b><p>Spersonalizuj przepisy, alergie i porcje - zajmie chwilę.</p></div>${ico('chev')}</div></div>`:''}
   <div class="pad"><div class="searchwrap">${ico('search')}<input id="homeSearch" placeholder="Szukaj przepisu lub składnika…" value="${state.q}" oninput="homeSearch(this.value)">${state.q?`<button class="clr" onclick="setQ('')" aria-label="Wyczyść">${ico('x')}</button>`:''}</div>
   <button class="morebtn" style="margin-top:10px" onclick="goFilters()">${ico('filter')} Filtry i kategorie</button></div>
@@ -1653,7 +1662,7 @@ function renderHome(){
   </div></div>
   ${favList.length?`<div class="section-h pad"><h2>Twoje ulubione</h2><a onclick="go('recipes')">Wszystkie</a></div><div class="rail">${favList.map(r=>recipeCardHTML(r)).join('')}</div>`:''}
   ${dogSwitcherHTML()}
-  ${dog?`<div class="section-h pad"><h2>Dla ${escH(dog.name)}</h2><a onclick="goMatched()">Wszystkie</a></div><div class="rail">${matched.map(r=>recipeCardHTML(r)).join('')}</div>`:''}
+  ${dog?`<div class="section-h pad"><h2>Dla ${escH(dog.name)}</h2><a onclick="goMatched()">Wszystkie</a></div>${dogTagline(dog)?`<p class="pad muted" style="margin:-8px 0 6px;font-size:13px">Dopasowane do ${escH(dog.name)} - ${escH(dogTagline(dog))}.</p>`:''}<div class="rail">${matched.map(r=>recipeCardHTML(r)).join('')}</div>`:''}
   ${colHTML}
   <div class="section-h pad"><h2>Od dietetyków</h2><a onclick="goDietitian()">Więcej</a></div>
   <div class="rail">${diet.map(r=>recipeCardHTML(r)).join('')}</div>
@@ -2246,7 +2255,7 @@ function dogFormHTML(d,editing){
     <div class="field"><label>Choroby / ograniczenia żywieniowe</label><input id="d_cond" value="${at(d.conditions&&d.conditions!=='Brak'?d.conditions:'')}" placeholder="np. wrażliwa trzustka"><span class="hint">Jeśli podasz, oznaczymy przepisy wymagające ostrożności.</span></div>
 
     <div class="formsec">O psie</div>
-    <div class="field"><label>Charakter, co lubi</label><textarea id="d_note" placeholder="np. Energiczny, uwielbia aportować">${tx(d.note)}</textarea></div>
+    <div class="field"><label>Charakter, co lubi</label><textarea id="d_note" placeholder="np. Energiczna miłośniczka aportu">${tx(d.note)}</textarea><span class="hint">Pierwsze zdanie pokażemy w powitaniu na stronie głównej i przy dopasowanych przepisach.</span></div>
 
     <button class="btn btn-gold" style="width:100%" onclick="saveDog()">${editing?'Zapisz zmiany':'Zapisz profil psa'}</button>
   </div>`;
