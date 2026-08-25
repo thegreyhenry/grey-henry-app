@@ -1052,6 +1052,8 @@ body.t-light .fc-big b{background:linear-gradient(120deg,#8F7F48,#655934);-webki
 .ing{border-bottom:1px dashed rgba(42,52,49,.16)}
 .ing span:last-child{color:var(--gold2);font-weight:600;font-size:13.5px}
 .step .n{background:linear-gradient(150deg,var(--gold),#a8975c);color:var(--forest);border:none;box-shadow:0 8px 18px -10px rgba(143,127,72,.7);font-weight:600}
+.step{align-items:flex-start}
+.step .n{display:grid!important;place-items:center!important;flex:0 0 32px;width:32px;height:32px;padding:0!important;line-height:1;font-family:var(--sans);font-size:14px;text-align:center;border-radius:50%;margin-top:1px}
 
 /* komentarze / dziennik - pola wysyłki */
 .cbox input,.jbox input{border-radius:999px;padding:14px 19px;font-size:13.5px;border-width:1.5px}
@@ -1163,12 +1165,11 @@ const FILTERGROUPS=[
  ['Źródło przepisu',[['diet','Od dietetyka'],['comm','Od społeczności']]],
  ['Cel żywieniowy',[['g_bialko','Wysokobiałkowe'],['g_lekko','Lekkostrawne'],['g_nisko','Niskotłuszczowe'],['g_brzuch','Wrażliwy żołądek'],['g_nadwaga','Kontrola wagi'],['g_aktywne','Dla aktywnych'],['g_zabieg','Po zabiegach']]],
  ['Czas',[['quick','Do 30 minut']]],
- ['Główne źródło białka',[['i_kurczak','Kurczak'],['i_indyk','Indyk'],['i_wolowina','Wołowina'],['i_ryba','Ryba'],['i_jajko','Jajko']]],
+ ['Główne źródło białka',[['i_kurczak','Kurczak'],['i_indyk','Indyk'],['i_kaczka','Kaczka'],['i_wolowina','Wołowina'],['i_wieprzowina','Wieprzowina'],['i_krolik','Królik'],['i_ryba','Ryba'],['i_jajko','Jajko']]],
  ['Alergie i nietolerancje',[['bez_kurczak','Bez kurczaka'],['bez_wolowina','Bez wołowiny'],['bez_ryba','Bez ryb'],['bez_jajko','Bez jajek'],['bez_nabial','Bez nabiału'],['bez_zboz','Bez zbóż'],['bez_ryz','Bez ryżu'],['bez_gluten','Bez glutenu']]],
  ['Metoda przygotowania',[['met_gotowane','Gotowane'],['met_pieczone','Pieczone'],['met_duszone','Duszone'],['met_surowe','Surowe']]],
  ['Przechowywanie',[['st_mroz','Do mrożenia'],['st_lodowka','Do lodówki'],['st_wynos','Na wynos'],['st_batch','Batch cooking']]],
  ['Tekstura',[['tex_miekkie','Miękkie'],['tex_mokre','Mokre'],['tex_kremowe','Kremowe'],['tex_kawalki','Kawałki'],['tex_chrupiace','Chrupiące']]],
- ['Wsparcie zdrowotne',[['h_skora','Skóra i sierść'],['h_stawy','Stawy'],['h_jelita','Jelita'],['h_odpornosc','Odporność']]],
  ['Suplementacja',[['sup_wymaga','Wymaga suplementacji'],['sup_bez','Bez suplementacji']]]
 ];
 const RISK=['czekolad','cebul','czosnek','winogron','rodzynk','ksylitol','awokado','makadami','alkohol'];
@@ -1768,8 +1769,7 @@ function renderAddRecipe(){
    ['Metoda przygotowania',[['met_gotowane','Gotowane'],['met_pieczone','Pieczone'],['met_duszone','Duszone'],['met_surowe','Surowe']]],
    ['Przechowywanie',[['st_mroz','Do mrożenia'],['st_lodowka','Do lodówki'],['st_wynos','Na wynos'],['st_batch','Batch cooking']]],
    ['Tekstura',[['tex_miekkie','Miękkie'],['tex_mokre','Mokre'],['tex_kremowe','Kremowe'],['tex_kawalki','Kawałki'],['tex_chrupiace','Chrupiące']]],
-   ['Wsparcie zdrowotne',[['h_skora','Skóra i sierść'],['h_stawy','Stawy'],['h_jelita','Jelita'],['h_odpornosc','Odporność']]],
-   ['Bez (alergeny)',[['bez_kurczak','Bez kurczaka'],['bez_wolowina','Bez wołowiny'],['bez_ryba','Bez ryb'],['bez_jajko','Bez jajek'],['bez_nabial','Bez nabiału'],['bez_zboz','Bez zbóż'],['bez_ryz','Bez ryżu'],['bez_gluten','Bez glutenu']]],
+     ['Bez (alergeny)',[['bez_kurczak','Bez kurczaka'],['bez_wolowina','Bez wołowiny'],['bez_ryba','Bez ryb'],['bez_jajko','Bez jajek'],['bez_nabial','Bez nabiału'],['bez_zboz','Bez zbóż'],['bez_ryz','Bez ryżu'],['bez_gluten','Bez glutenu']]],
    ['Suplementacja',[['sup_bez','Bez suplementów'],['sup_wymaga','Wymaga suplementacji']]],
    ['Sezon (np. letnie chłodzące)',[['x_sezon','Sezonowy / letni']]]
   ];
@@ -2727,7 +2727,7 @@ function paintDetail(id){
       <p class="disclaim">Wartości odżywcze i porcje są orientacyjne i nie zastępują konsultacji z lekarzem weterynarii ani dietetykiem zwierzęcym.</p>
     </div>`;
   try{calcInit();}catch(e){}
-  try{loadRecipeComments(id,true);}catch(e){}
+  try{if(!_cmtsFetched.has(id)){_cmtsFetched.add(id);loadRecipeComments(id,true);}}catch(e){}
 }
 function hideDetail(){_detailId=null;$('detail').classList.remove('open');try{if(location.search)history.replaceState(history.state,'',location.pathname);}catch(e){}}
 function openRecipeFromUrl(){try{const rid=new URLSearchParams(location.search).get('r');if(rid&&findRecipe(rid))openRecipe(rid);}catch(e){}}
@@ -2746,6 +2746,7 @@ async function toggleFav(id){
   }catch(e){toast('Błąd ulubionych: '+(e.message||e));}
 }
 
+const _cmtsFetched=new Set();
 async function loadRecipeComments(id,repaint){
   if(!sb||!id)return;
   try{
@@ -2764,7 +2765,7 @@ async function addComment(id){
     if(error){toast('Nie udało się dodać komentarza: '+error.message);try{reportClientError('addComment: '+error.message,'comments');}catch(_){ } return;}
   }catch(e){toast('Nie udało się dodać komentarza: '+(e.message||e));try{reportClientError('addComment: '+(e.message||e),'comments',e&&e.stack);}catch(_){ } return;}
   inp.value='';
-  await loadRecipeComments(id,false);
+  _cmtsFetched.delete(id);await loadRecipeComments(id,false);_cmtsFetched.add(id);
   if(typeof _detailId!=='undefined'&&_detailId===id){try{paintDetail(id);}catch(_){}}else{openRecipe(id);}
   toast('Dodano komentarz');
 }
