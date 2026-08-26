@@ -1242,8 +1242,9 @@ function mapDbRecipe(r,ings,steps,tagKeys,i){
 }
 async function loadData(){
   if(!sb)return;
-  const [{data:recs},{data:rtags},{data:favs},{data:anns},{data:cols},{data:colrec},{data:cfg}]=await Promise.all([
+  const [{data:recs},{data:allIngs},{data:rtags},{data:favs},{data:anns},{data:cols},{data:colrec},{data:cfg}]=await Promise.all([
     sb.from('recipes').select('*').eq('status','approved').order('rating_avg',{ascending:false}),
+    sb.from('recipe_ingredients').select('recipe_id,name,amount,position').order('position').limit(5000),
     sb.from('recipe_tags').select('recipe_id,tags(key)'),
     state.user?sb.from('favorites').select('recipe_id'):Promise.resolve({data:[]}),
     state.user?sb.from('announcements').select('*').order('created_at',{ascending:false}).limit(20):Promise.resolve({data:[]}),
@@ -1254,7 +1255,8 @@ async function loadData(){
   state.announcements=(anns||[]).map(a=>({id:a.id,title:escH(a.title),body:escH(a.body),when:new Date(a.created_at).toLocaleDateString('pl-PL')}));
   const tgM={};
   (rtags||[]).forEach(rt=>{const k=rt.tags&&rt.tags.key;if(k)(tgM[rt.recipe_id]=tgM[rt.recipe_id]||[]).push(k);});
-  RECIPES=(recs||[]).map((r,i)=>mapDbRecipe(r,null,null,tgM[r.id]||[],i));
+  const ingM={};(allIngs||[]).forEach(x=>{(ingM[x.recipe_id]=ingM[x.recipe_id]||[]).push(x);});
+  RECIPES=(recs||[]).map((r,i)=>mapDbRecipe(r,ingM[r.id]||null,null,tgM[r.id]||[],i));
   state.collections=cols||[]; state.colRecipes=colrec||[]; state.recipeOfDay=(cfg&&cfg.value&&cfg.value.recipe_id)||null;
   await loadThreads();
   state.favs=new Set((favs||[]).map(f=>f.recipe_id));
@@ -1541,9 +1543,12 @@ function termHit(ingName,term){
   return null;
 }
 /* pełna analiza: lista konfliktów z poziomem pewności */
+const EXCL_TAG={kurczak:'i_kurczak',indyk:'i_indyk',wolowina:'i_wolowina',ryba:'i_ryba',krolik:'i_krolik',jajko:'i_jajko'};
+const EXCL_FREE={kurczak:'bez_kurczak',wolowina:'bez_wolowina',ryba:'bez_ryba',jajko:'bez_jajko',nabial:'bez_nabial',zboza:'bez_zboz',ryz:'bez_ryz'};
 function dogConflicts(r,dog){
   if(!dog)return [];
   const ings=(r.ing||[]).map(i=>(i&&i[0])||'');
+  const flags=r.flags||[];
   const out=[];
   for(const a of dogAvoid(dog)){
     if(!a)continue;
@@ -1559,6 +1564,10 @@ function dogConflicts(r,dog){
       }
       if(best==='exact')break;
     }
+    // siatka bezpieczeństwa: gdy przepis jest OZNACZONY tym mięsem, to konflikt pewny
+    if(best!=='exact'&&EXCL_TAG[a]&&flags.indexOf(EXCL_TAG[a])>=0){best='exact';where=where||label;}
+    // gdy przepis ma oznaczenie "bez X", ufamy mu i konflikt znika
+    if(best&&EXCL_FREE[a]&&flags.indexOf(EXCL_FREE[a])>=0&&best!=='exact')best=null;
     if(best)out.push({key:a,label:label,level:best,ing:where});
   }
   return out;
