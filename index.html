@@ -1336,7 +1336,11 @@ async function afterLogin(){
 }
 function startPresence(){
   if(!state.user)return;
-  const ping=()=>{if(state.user&&sb){try{sb.rpc('touch_seen');}catch(e){}}};
+  const ping=async()=>{
+    if(!state.user||!sb)return;
+    try{const {error}=await sb.rpc('touch_seen');if(error){try{reportClientError('touch_seen: '+error.message,'presence');}catch(_){}}}
+    catch(e){try{reportClientError('touch_seen: '+(e.message||e),'presence',e&&e.stack);}catch(_){}}
+  };
   ping();
   if(state._presenceTimer)clearInterval(state._presenceTimer);
   state._presenceTimer=setInterval(ping,60000);

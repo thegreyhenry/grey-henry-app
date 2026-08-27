@@ -283,9 +283,11 @@ function bar(data){
 function renderDash(){
   const c=db.counts,s=c.byStatus||{},st=db.stats||{};
   const kpi=(lab,val,hint)=>`<div class="kpi"><div class="lab">${lab}</div><div class="val">${val}</div><div class="hint">${hint||''}</div></div>`;
-  let html=`<div class="liverow"><span class="livedot"></span>Statystyki na żywo · zaktualizowano <b id="liveTime">${new Date().toLocaleTimeString('pl-PL')}</b></div><div class="grid kpis">
-    ${kpi('Aktywni teraz',st.active_now||0,'ostatnie 5 min')}
-    ${kpi('Aktywni dziś',st.active_today||0,'ostatnie 24 h')}
+  let html=`<div class="liverow"><span class="livedot"></span>Statystyki na żywo · ostatnie logowanie w systemie: <b>${st.last_login||'-'}</b> · zaktualizowano <b id="liveTime">${new Date().toLocaleTimeString('pl-PL')}</b></div><div class="grid kpis">
+    ${kpi('W aplikacji teraz',st.active_now||0,'ostatnie 5 min')}
+    ${kpi('Aktywni dziś',st.active_today||0,'wejście lub logowanie / 24 h')}
+    ${kpi('Aktywni (30 dni)',st.active_30d||0,'z '+(st.users_total||0)+' kont')}
+    ${kpi('Nigdy nie logowani',st.never_logged||0,'konta bez logowania')}
     ${kpi('Użytkownicy',c.users,(st.users_7d!=null?('+'+st.users_7d+' w 7 dni'):'zarejestrowane konta'))}
     ${kpi('Przepisy',c.recipes,(s.approved||0)+' opublikowanych')}
     ${kpi('Oczekujące',s.pending||0,'do moderacji')}
