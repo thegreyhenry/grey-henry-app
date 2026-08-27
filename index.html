@@ -1189,7 +1189,6 @@ const CATGROUPS=[
  ['Styl',[['st_premium','Premium']]]
 ];
 const FILTERGROUPS=[
- ['Źródło przepisu',[['diet','Od dietetyka'],['comm','Od społeczności']]],
  ['Cel żywieniowy',[['g_bialko','Wysokobiałkowe'],['g_lekko','Lekkostrawne'],['g_nisko','Niskotłuszczowe'],['g_brzuch','Wrażliwy żołądek'],['g_nadwaga','Kontrola wagi'],['g_aktywne','Dla aktywnych'],['g_zabieg','Po zabiegach']]],
  ['Czas',[['quick','Do 30 minut']]],
  ['Główne źródło białka',[['i_kurczak','Kurczak'],['i_indyk','Indyk'],['i_kaczka','Kaczka'],['i_wolowina','Wołowina'],['i_wieprzowina','Wieprzowina'],['i_krolik','Królik'],['i_ryba','Ryba'],['i_jajko','Jajko']]],
@@ -1683,8 +1682,7 @@ function renderHome(){
   ${colHTML}
   <div class="section-h pad"><h2>Od dietetyków</h2><a onclick="goDietitian()">Więcej</a></div>
   <div class="rail">${diet.map(r=>recipeCardHTML(r)).join('')}</div>
-  <div class="section-h pad"><h2>Popularne w społeczności</h2><a onclick="goComm()">Wszystkie</a></div>
-  <div class="rail">${popular.map(r=>recipeCardHTML(r)).join('')}</div>
+
   <div style="padding:30px 22px 8px"><div class="sprig"><span>${star} ${star} ${star}</span></div></div>
   <div class="section-h pad"><h2>Najnowsze</h2></div>
   <div class="list" style="padding-bottom:8px">${safeAll.slice(4,8).map(r=>recipeCardHTML(r,true)).join('')}</div>
@@ -1756,7 +1754,7 @@ function renderRecipes(){
   <div class="pad" style="margin-top:20px"><div class="sprig"><span>WSZYSTKIE PRZEPISY</span></div></div>`:''}
   <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 22px 2px">
     <span class="muted">${list.length} ${list.length===1?'przepis':'przepisów'}</span>
-    <button class="outbtn" onclick="go('add')">${ico('plus')} Dodaj przepis</button></div>
+    </div>
   <div class="list" style="padding-bottom:8px;margin-top:8px">
     ${list.length?vis.map(r=>recipeCardHTML(r,true)).join(''):`<div style="text-align:center;color:#8a9189;padding:36px 14px;font-weight:300">Brak przepisów dla wybranych kryteriów.<br><button class="outbtn" style="margin-top:14px" onclick="clearFilters()">${ico('x')} Wyczyść wszystko</button></div>`}
   </div>
@@ -2067,7 +2065,6 @@ async function generateShop(){
 
 function renderCommunity(){
   if(state.activeThread)return renderThreadView();
-  const userRecipes=RECIPES.filter(r=>r.userMade).sort((a,b)=>(b.created||'').localeCompare(a.created||'')).slice(0,10);
   const threads=state.threads||[];
   return `
   <div class="brandbar" style="padding:18px 0 4px"><img class="crest" src="${CREST}" style="height:60px" alt="" loading="lazy" decoding="async"></div>
@@ -2076,8 +2073,6 @@ function renderCommunity(){
     ${(state.announcements||[]).length?`<div class="section-h"><h2 style="font-size:18px">Ogłoszenia</h2></div>
     ${state.announcements.map(a=>`<div class="comm-post announce"><div class="ph"><div class="av crest-av"><img src="${CREST}" alt="" loading="lazy" decoding="async"></div><div><b>Molly's Table</b><small>Ogłoszenie · ${a.when}</small></div></div><h4 class="ann-t">${a.title}</h4><p>${a.body}</p></div>`).join('')}`:''}
 
-    <div class="section-h"><h2 style="font-size:18px">Najnowsze przepisy od użytkowników</h2></div>
-    ${userRecipes.length?`<div class="rail">${userRecipes.map(r=>recipeCardHTML(r)).join('')}</div>`:`<p class="muted" style="padding:2px 0 10px">Nikt jeszcze nie dodał własnego przepisu. Bądź pierwszy - <a style="color:var(--gold);cursor:pointer" onclick="go('add')">dodaj przepis</a>.</p>`}
 
     <div class="section-h" style="margin-top:22px"><h2 style="font-size:18px">Rozmowy</h2><a onclick="startThread()">+ Nowy wątek</a></div>
     ${state.communityCompose?threadComposeHTML():''}
@@ -2201,7 +2196,7 @@ function renderProfile(){
     <div class="pf-stats">
       <button class="pf-stat" onclick="document.getElementById('secDogs').scrollIntoView({behavior:'smooth',block:'start'})"><b>${state.dogs.length}</b><span>Psy</span></button>
       <button class="pf-stat" onclick="document.getElementById('secFav').scrollIntoView({behavior:'smooth',block:'start'})"><b>${favs.length}</b><span>Ulubione</span></button>
-      <button class="pf-stat" onclick="document.getElementById('secMine').scrollIntoView({behavior:'smooth',block:'start'})"><b>${state.myRecipes.length}</b><span>Moje przepisy</span></button>
+      
     </div>
     <div class="section-h" id="secDogs" style="margin-top:4px"><h2 style="font-size:18px">Profile psów</h2><a onclick="openDogForm()">+ Dodaj psa</a></div>
     ${state.dogs.map((d,i)=>dogCardHTML(d,i)).join('')}
@@ -2225,8 +2220,6 @@ function renderProfile(){
     ${(state.pending&&state.pending.length)?state.pending.map(r=>`<div class="dogcard" style="margin-bottom:12px;align-items:center"><div class="ava" style="border-radius:14px">${ico('book')}</div><div style="flex:1"><h4 style="font-size:15px">${r.name}</h4><div style="margin-top:6px"><span class="status-pill">Oczekuje</span></div></div><div style="display:flex;gap:8px;flex:0 0 auto"><button class="btn btn-gold" style="padding:9px 13px;margin:0;font-size:13px" onclick="approveRecipe('${r.id}')">Zatwierdź</button><button class="outbtn" style="padding:9px 13px;font-size:13px" onclick="rejectRecipe('${r.id}')">Odrzuć</button></div></div>`).join(''):'<p class="muted" style="padding:2px 0 12px">Brak przepisów oczekujących na akceptację.</p>'}
     `:''}
 
-    <div class="section-h" id="secMine"><h2 style="font-size:18px">Moje przepisy</h2><a onclick="go('add')">+ Dodaj</a></div>
-    ${state.myRecipes.length?state.myRecipes.map(r=>`<div class="dogcard" style="margin-bottom:12px;cursor:pointer" onclick="openRecipe('${r.id}')"><div class="ava" style="border-radius:14px">${ico('book')}</div><div style="flex:1"><h4 style="font-size:16px">${r.name}</h4><div style="margin-top:7px"><span class="status-pill">${({pending:'Oczekuje na akceptację',approved:'Zatwierdzony',rejected:'Odrzucony',draft:'Szkic'})[r.status]||'Oczekuje na akceptację'}</span></div></div><span style="color:var(--gold)">${ico('chev')}</span></div>`).join('')
       :'<p class="muted" style="padding:2px 0 12px">Nie masz jeszcze własnych przepisów. <a style="color:var(--gold);cursor:pointer" onclick="go(\'add\')">Dodaj pierwszy</a>.</p>'}
 
     <div class="section-h" id="secFav"><h2 style="font-size:18px">Ulubione</h2><span style="font-size:12px;color:#8a9189">${favs.length}</span></div>
@@ -2340,7 +2333,7 @@ function allergyMode(){
   toast('Tryb alergii: ukrywam produkty uczulające dla '+d.name);
 }
 
-const VIEWS={home:renderHome,recipes:renderRecipes,add:renderAddRecipe,planner:renderPlanner,community:renderCommunity,profile:renderProfile,account:renderAccount,notifs:renderNotifs};
+const VIEWS={home:renderHome,recipes:renderRecipes,planner:renderPlanner,community:renderCommunity,profile:renderProfile,account:renderAccount,notifs:renderNotifs};
 let lastTab=null;
 function render(){
   const sc=$('screen');
