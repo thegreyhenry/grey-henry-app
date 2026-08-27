@@ -76,6 +76,14 @@ svg{display:block}
 .greetrow .greet{font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:#9aa69d}
 .greetrow b{display:block;font-family:var(--serif);font-size:23px;font-weight:500;margin-top:4px}
 .greetrow .greet-tag{display:block;font-size:12.5px;color:var(--gold);margin-top:6px;font-style:italic;letter-spacing:.01em}
+.homefilters{display:flex;gap:10px;align-items:center;margin:12px 0 4px;padding-right:0}
+.homefilters .hf-btn{flex:0 0 auto;display:flex;align-items:center;gap:7px;padding:9px 15px;border-radius:999px;border:1.5px solid rgba(191,177,120,.45);background:rgba(191,177,120,.08);color:var(--gold);font-family:var(--sans);font-size:12.5px;font-weight:600;cursor:pointer}
+.homefilters .hf-btn svg{width:15px;height:15px}
+.homefilters .hf-btn:hover{background:var(--gold);color:var(--forest)}
+body.t-light .homefilters .hf-btn{background:#fff;color:var(--gold2);border-color:rgba(143,127,72,.45)}
+body.t-light .homefilters .hf-btn:hover{background:var(--green);border-color:var(--green);color:#fff}
+.homefilters .qcats{margin:0;padding:0;overflow-x:auto;flex:1;scrollbar-width:none}
+.homefilters .qcats::-webkit-scrollbar{display:none}
 body.t-light .greetrow .greet-tag{color:var(--gold2)}
 
 .searchpill{width:100%;display:flex;align-items:center;gap:11px;background:rgba(244,238,225,.06);border:1px solid var(--line);border-radius:15px;padding:15px 16px;color:#9aa69d;font-family:var(--sans);font-size:14px;cursor:pointer;transition:.18s;margin-top:14px}
@@ -1651,7 +1659,7 @@ function renderHome(){
   if(!featured)return '<div class="pad muted" style="padding-top:60px;text-align:center">Brak przepisów do wyświetlenia.</div>';
   const diet=safeAll.filter(r=>r.badge==='diet');
   const popular=safeAll.filter(r=>r.badge==='comm');
-  const matched=dog?RECIPES.filter(r=>recipeMatchesDog(r,dog)).slice(0,6):[];
+  const matched=dog?RECIPES.filter(r=>recipeMatchesDog(r,dog)).slice(0,3):[];
   const favList=safeList(RECIPES.filter(r=>state.favs.has(r.id)));
   const quick=[['f_pelno','Pełnoporcjowe'],['m_smaczek','Smaczki'],['a_szczeniak','Szczenięta'],['a_senior','Seniory'],['g_lekko','Lekkostrawne']];
   const cols=(state.collections||[]).filter(c=>c.active).sort((a,b)=>a.sort_order-b.sort_order);
@@ -1662,7 +1670,9 @@ function renderHome(){
   ${state.user&&!state.dogs.length?`<div class="pad"><div class="onboard" onclick="goAddDog()"><div class="ob-i">${ico('user')}</div><div style="flex:1"><b>Dodaj profil swojego psa</b><p>Spersonalizuj przepisy, alergie i porcje - zajmie chwilę.</p></div>${ico('chev')}</div></div>`:''}
   <div class="pad"><div class="searchwrap">${ico('search')}<input id="homeSearch" placeholder="Szukaj przepisu lub składnika…" value="${state.q}" oninput="homeSearch(this.value)">${state.q?`<button class="clr" onclick="setQ('')" aria-label="Wyczyść">${ico('x')}</button>`:''}</div>
   <button class="morebtn" style="margin-top:10px" onclick="goFilters()">${ico('filter')} Filtry i kategorie</button></div>
-  <div class="chips qcats">${quick.map(([c,l])=>`<button class="chip" onclick="goCat('${c}')">${l}</button>`).join('')}</div>
+  <div class="pad homefilters"><button type="button" class="hf-btn" onclick="go('recipes');setTimeout(()=>{state.showFilters=true;render();},0)">${ico('filter')} Filtry</button><div class="chips qcats">${quick.map(([c,l])=>`<button class="chip" onclick="goCat('${c}')">${l}</button>`).join('')}</div></div>
+  ${dogSwitcherHTML()}
+  ${dog?`<div class="section-h pad"><h2>Dla ${escH(dog.name)}</h2><a onclick="goMatched()">Wszystkie</a></div>${dogTagline(dog)?`<p class="pad muted" style="margin:-8px 0 6px;font-size:13px">Dopasowane do ${escH(dog.name)} - ${escH(dogTagline(dog))}.</p>`:''}<div class="rail">${matched.map(r=>recipeCardHTML(r)).join('')}</div>`:''}
   <div class="pad"><div class="hero">
     <img src="${MONOG}" alt="" style="position:absolute;top:16px;right:16px;width:66px;opacity:.12;z-index:0;pointer-events:none" loading="lazy" decoding="async">
     <span class="eyebrow">${rod?'Przepis dnia':'Polecane dnia'}</span><h3>${featured.name}</h3>
@@ -1670,8 +1680,6 @@ function renderHome(){
     <div style="margin-top:18px"><button class="btn btn-gold" onclick="openRecipe('${featured.id}')">Zobacz przepis</button></div>
   </div></div>
   ${favList.length?`<div class="section-h pad"><h2>Twoje ulubione</h2><a onclick="go('recipes')">Wszystkie</a></div><div class="rail">${favList.map(r=>recipeCardHTML(r)).join('')}</div>`:''}
-  ${dogSwitcherHTML()}
-  ${dog?`<div class="section-h pad"><h2>Dla ${escH(dog.name)}</h2><a onclick="goMatched()">Wszystkie</a></div>${dogTagline(dog)?`<p class="pad muted" style="margin:-8px 0 6px;font-size:13px">Dopasowane do ${escH(dog.name)} - ${escH(dogTagline(dog))}.</p>`:''}<div class="rail">${matched.map(r=>recipeCardHTML(r)).join('')}</div>`:''}
   ${colHTML}
   <div class="section-h pad"><h2>Od dietetyków</h2><a onclick="goDietitian()">Więcej</a></div>
   <div class="rail">${diet.map(r=>recipeCardHTML(r)).join('')}</div>
