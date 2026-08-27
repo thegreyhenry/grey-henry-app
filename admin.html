@@ -120,6 +120,11 @@ input[type=checkbox]{width:17px;height:17px;accent-color:var(--gold2);cursor:poi
 .pushprev .pp-tx{min-width:0}
 .pushprev .pp-tx b{display:block;font-family:'Jost',sans-serif;font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pushprev .pp-tx span{display:block;font-size:12.5px;color:#c7cfc8;margin-top:2px;line-height:1.4;max-height:36px;overflow:hidden}
+#e_tags .chipgrp{margin-bottom:14px}
+#e_tags .gl{display:flex;align-items:center;gap:8px;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--gold2);font-weight:600;margin-bottom:7px}
+#e_tags .gcount{background:var(--gold2);color:#fff;border-radius:999px;min-width:18px;height:18px;display:inline-grid;place-items:center;font-size:10.5px;padding:0 5px;letter-spacing:0}
+#e_tags .gclear{margin-left:auto;background:none;border:none;color:var(--muted);font-size:10.5px;text-transform:none;letter-spacing:0;cursor:pointer;text-decoration:underline}
+#e_tags .gclear:hover{color:#c0563e}
 .liverow{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);margin-bottom:14px}
 .liverow b{color:var(--ink);font-weight:600}
 .livedot{width:9px;height:9px;border-radius:50%;background:#3a9d5d;flex:0 0 auto;animation:livepulse 2s infinite}
@@ -596,6 +601,31 @@ const ADDGROUPS=[
  ['Oznaczenie jakości (personel)',[['q_diet','Od dietetyka'],['q_verif','Zweryfikowany']]]
 ];
 const DIFFOPTS=[['easy','Łatwy'],['medium','Średni'],['hard','Trudny']];
+const GRP_PL={meal:'Rodzaj posiłku',form:'Typ / forma posiłku',ingredient:'Główne źródło białka / składnik',
+ goal:'Cel żywieniowy',free_from:'Alergie i nietolerancje (bez...)',method:'Metoda przygotowania',
+ storage:'Przechowywanie',texture:'Tekstura',age:'Wiek psa',size:'Wielkość psa',
+ health:'Wsparcie zdrowotne',supplement:'Suplementacja',style:'Styl',season:'Sezon',quality:'Oznaczenie jakości'};
+const GRP_ORDER=['meal','form','ingredient','goal','free_from','method','storage','texture','age','size','health','supplement','style','season','quality'];
+function tagGroupsHTML(cur){
+  const by={};(db.tags||[]).forEach(t=>{(by[t.grp]=by[t.grp]||[]).push(t);});
+  const keys=GRP_ORDER.filter(g=>by[g]).concat(Object.keys(by).filter(g=>GRP_ORDER.indexOf(g)<0));
+  return keys.map(g=>{
+    const list=by[g].slice().sort((a,b)=>String(a.label).localeCompare(String(b.label),'pl'));
+    const n=list.filter(t=>cur.has(t.key)).length;
+    return `<div class="chipgrp"><div class="gl">${GRP_PL[g]||g}${n?' <span class="gcount">'+n+'</span>':''}<button type="button" class="gclear" onclick="clearGrp('${g}')">wyczyść</button></div><div class="chips" data-grp="${g}">${list.map(t=>`<button type="button" class="achip ${cur.has(t.key)?'active':''}" data-k="${t.key}" onclick="this.classList.toggle('active');refreshGrpCounts()">${esc(t.label)}</button>`).join('')}</div></div>`;
+  }).join('');
+}
+function clearGrp(g){document.querySelectorAll('#e_tags .chips[data-grp="'+g+'"] .achip.active').forEach(b=>b.classList.remove('active'));refreshGrpCounts();}
+function refreshGrpCounts(){
+  document.querySelectorAll('#e_tags .chipgrp').forEach(box=>{
+    const n=box.querySelectorAll('.achip.active').length;
+    const gl=box.querySelector('.gl');let c=gl.querySelector('.gcount');
+    if(n){if(!c){c=document.createElement('span');c.className='gcount';gl.insertBefore(c,gl.querySelector('.gclear'));}c.textContent=n;}
+    else if(c)c.remove();
+  });
+  const tot=document.querySelectorAll('#e_tags .achip.active').length;
+  const lbl=document.getElementById('tagTotal');if(lbl)lbl.textContent=tot;
+}
 async function openEditor(id){
   $('modalBox').innerHTML='<div class="loading">Ładowanie…</div>';$('modal').classList.add('open');
   let r={title:'',description:'',difficulty:'easy',time_min:'',kcal:'',status:'draft',author_id:me.id},ings=[],steps=[],cur=new Set();
@@ -609,7 +639,7 @@ async function openEditor(id){
     ings=ing.data||[];steps=stp.data||[];(tg.data||[]).forEach(x=>{if(x.tags&&x.tags.key)cur.add(x.tags.key);});
   }
   const diff=DIFFOPTS.map(([v,l])=>`<option value="${v}" ${r.difficulty===v?'selected':''}>${l}</option>`).join('');
-  const groups=ADDGROUPS.map(g=>`<div class="chipgrp"><div class="gl">${g[0]}</div><div class="chips">${g[1].map(([k,l])=>`<button type="button" class="achip ${cur.has(k)?'active':''}" data-k="${k}" onclick="this.classList.toggle('active')">${esc(l)}</button>`).join('')}</div></div>`).join('');
+  const groups=tagGroupsHTML(cur);
   const ingText=ings.map(i=>i.name+(i.amount?' - '+i.amount:'')).join('\n');
   const stepText=steps.map(s=>s.body).join('\n');
   const idarg=id?`'${id}'`:'null';
@@ -625,7 +655,7 @@ async function openEditor(id){
     <div class="sec"><label>Nazwa</label><input id="e_title" value="${esc(r.title)}"></div>
     <div class="sec grid2"><div><label>Trudność</label><select id="e_diff">${diff}</select></div><div><label>Czas (min)</label><input id="e_time" value="${r.time_min||''}" inputmode="numeric"></div><div><label>Kcal</label><input id="e_kcal" value="${r.kcal||''}" inputmode="numeric"></div></div>
     <div class="sec"><label>Opis</label><textarea id="e_desc" rows="2">${esc(r.description)}</textarea></div>
-    <div class="sec"><b>Kategorie</b><div id="e_tags">${groups}</div></div>
+    <div class="sec"><b>Kategorie i filtry</b> <span class="muted-cell" style="font-size:12px">- zaznaczone: <b id="tagTotal">${cur.size}</b> (decydują, w jakich filtrach pojawi się przepis)</span><div id="e_tags">${groups}</div></div>
     <div class="sec"><label>Składniki (nazwa - ilość, każdy w nowej linii)</label><textarea id="e_ing" rows="5">${esc(ingText)}</textarea></div>
     <div class="sec"><label>Kroki przygotowania (każdy w nowej linii)</label><textarea id="e_steps" rows="5">${esc(stepText)}</textarea></div>
     <div class="sec"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px;color:var(--ink)"><input type="checkbox" id="e_featured" ${r.featured?'checked':''} style="width:auto;margin:0"> ★ Wyróżnij na stronie głównej (Polecane dnia)</label></div>
