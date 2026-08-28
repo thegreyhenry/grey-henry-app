@@ -768,7 +768,7 @@ async function createUserForm(){
 }
 async function resetUserPass(id){
   if(!confirm('Wysłać link resetu hasła do tego użytkownika?'))return;
-  const r=await adminAction('reset_password',{userId:id,redirectTo:'https://thegreyhenry.com/'});
+  const r=await adminAction('reset_password',{userId:id,redirectTo:location.origin+location.pathname.replace(/admin\.html$/,'')});
   if(r.error){toast('Błąd: '+r.error);return;}
   toast('Wysłano link resetu hasła');
 }
