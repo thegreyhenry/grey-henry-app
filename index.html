@@ -85,6 +85,15 @@ body.t-light .homefilters .hf-btn:hover{background:var(--green);border-color:var
 .homefilters .qcats{margin:0;padding:0;overflow-x:auto;flex:1;scrollbar-width:none}
 .homefilters .qcats::-webkit-scrollbar{display:none}
 body.t-light .greetrow .greet-tag{color:var(--gold2)}
+.maintenance{position:fixed;inset:0;z-index:500;background:linear-gradient(170deg,#26312d,#15201d);display:flex;align-items:center;justify-content:center;padding:26px}
+.mt-box{max-width:380px;width:100%;text-align:center;background:var(--ivory);color:#23302B;border-radius:26px;padding:32px 26px 24px;box-shadow:0 40px 90px -30px rgba(0,0,0,.7)}
+.mt-crest{height:66px;margin-bottom:14px}
+.mt-badge{display:inline-block;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#8F7F48;background:rgba(143,127,72,.14);border:1px solid rgba(143,127,72,.3);padding:4px 11px;border-radius:999px;margin-bottom:12px}
+.mt-box h2{font-family:var(--serif);font-size:24px;font-weight:500;margin-bottom:10px}
+.mt-box p{font-size:14px;color:#5a635b;line-height:1.65;margin-bottom:22px}
+.mt-banner{position:fixed;left:0;right:0;bottom:0;z-index:400;background:#8F7F48;color:#fff;font-family:var(--sans);font-size:12.5px;line-height:1.4;padding:10px 16px calc(10px + env(safe-area-inset-bottom));text-align:center}
+.mt-banner b{font-weight:700}
+body:has(.mt-banner) .nav{bottom:38px}
 
 .searchpill{width:100%;display:flex;align-items:center;gap:11px;background:rgba(244,238,225,.06);border:1px solid var(--line);border-radius:15px;padding:15px 16px;color:#9aa69d;font-family:var(--sans);font-size:14px;cursor:pointer;transition:.18s;margin-top:14px}
 .searchpill:hover{border-color:var(--gold)}
@@ -1400,7 +1409,47 @@ async function start(){
   });
   if(window.location.hash&&window.location.hash.indexOf('type=recovery')>=0){showRecovery();return;}
   const {data}=await sb.auth.getSession();
+  if(await maintenanceCheck(data.session?data.session.user:null))return;
   if(data.session){await afterLogin();}else{$('login').classList.add('show');}
+}
+/* Tryb konserwacji: sterowany z panelu (app_config.maintenance).
+   Zespół (admin/moderator/dietetyk) zawsze wchodzi normalnie. */
+async function maintenanceCheck(user){
+  try{
+    const {data,error}=await sb.from('app_config').select('value').eq('key','maintenance').maybeSingle();
+    if(error||!data||!data.value||data.value.on!==true)return false;
+    if(user){
+      try{
+        const {data:prof}=await sb.from('profiles').select('role').eq('id',user.id).maybeSingle();
+        if(prof&&['admin','moderator','dietitian','staff'].indexOf(prof.role)>=0){
+          showMaintenanceBanner(data.value);
+          return false;   // zespół pracuje dalej
+        }
+      }catch(_){}
+    }
+    showMaintenance(data.value);
+    return true;
+  }catch(e){return false;}   // awaria sprawdzenia nie blokuje aplikacji
+}
+function showMaintenance(cfg){
+  try{const l=$('login');if(l)l.classList.remove('show');}catch(_){}
+  const el=document.createElement('div');
+  el.className='maintenance';
+  el.innerHTML=`<div class="mt-box">
+    <img src="${CREST}" alt="" class="mt-crest" loading="lazy" decoding="async">
+    <div class="mt-badge">Przerwa techniczna</div>
+    <h2>${escH(cfg.title||'Przerwa techniczna')}</h2>
+    <p>${escH(cfg.message||'Pracujemy nad ulepszeniami. Wróć za chwilę.')}</p>
+    <button class="btn btn-gold" style="width:100%;margin:0" onclick="location.reload()">Sprawdź ponownie</button>
+  </div>`;
+  document.body.appendChild(el);
+}
+function showMaintenanceBanner(cfg){
+  if(document.getElementById('mtBanner'))return;
+  const b=document.createElement('div');
+  b.id='mtBanner';b.className='mt-banner';
+  b.innerHTML=`<span>Tryb konserwacji jest <b>włączony</b> - użytkownicy nie mają dostępu. Ty widzisz aplikację jako zespół.</span>`;
+  document.body.appendChild(b);
 }
 async function doLogin(){const e=$('lg_email').value.trim(),p=$('lg_pass').value;if(!sb)return;const {error}=await sb.auth.signInWithPassword({email:e,password:p});if(error)return toast(error.message);toast('Zalogowano');afterLogin();}
 async function doGoogle(){if(!sb)return;const {error}=await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:window.location.href.split('#')[0]}});if(error)toast(error.message);}

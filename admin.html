@@ -125,6 +125,9 @@ input[type=checkbox]{width:17px;height:17px;accent-color:var(--gold2);cursor:poi
 #e_tags .gcount{background:var(--gold2);color:#fff;border-radius:999px;min-width:18px;height:18px;display:inline-grid;place-items:center;font-size:10.5px;padding:0 5px;letter-spacing:0}
 #e_tags .gclear{margin-left:auto;background:none;border:none;color:var(--muted);font-size:10.5px;text-transform:none;letter-spacing:0;cursor:pointer;text-decoration:underline}
 #e_tags .gclear:hover{color:#c0563e}
+.mt-on{display:inline-block;margin-left:8px;font-size:10px;letter-spacing:.1em;background:#c0563e;color:#fff;padding:3px 9px;border-radius:999px;vertical-align:middle}
+.btn.danger{background:#c0563e;border-color:#c0563e;color:#fff}
+.btn.danger:hover{background:#a8452f}
 .liverow{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);margin-bottom:14px}
 .liverow b{color:var(--ink);font-weight:600}
 .livedot{width:9px;height:9px;border-radius:50%;background:#3a9d5d;flex:0 0 auto;animation:livepulse 2s infinite}
@@ -363,10 +366,40 @@ function _csvCell(v){v=(v==null?'':String(v));return /[",\n;]/.test(v)?'"'+v.rep
 function _dl(name,text){const b=new Blob(['\ufeff'+text],{type:'text/csv;charset=utf-8'});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1500);}
 function exportRecipes(){const rows=[['Tytuł','Status','Ocena','Liczba ocen','Autor','Wyróżniony','Dodano']].concat(db.recipes.map(r=>[r.title,statusName(r.status),r.rating_avg||'',r.rating_count||0,uMap[r.author_id]||'',r.featured?'tak':'nie',fmtD(r.created_at)]));_dl('przepisy.csv',rows.map(r=>r.map(_csvCell).join(';')).join('\r\n'));toast('Wyeksportowano przepisy (CSV)');}
 function exportUsers(){const src=(db.authUsers&&db.authUsers.length)?db.authUsers:db.users;const rows=[['Nazwa','E-mail','Rola','Premium','Zablokowany','Utworzono']].concat(src.map(u=>[u.display_name||'',u.email||'',u.role||'',u.is_premium?'tak':'nie',u.blocked?'tak':'nie',fmtD(u.created_at)]));_dl('uzytkownicy.csv',rows.map(r=>r.map(_csvCell).join(';')).join('\r\n'));toast('Wyeksportowano użytkowników (CSV)');}
+function maintenanceCardHTML(){
+  const m=(db.config&&db.config.maintenance)||{};
+  const on=m.on===true;
+  return `<div class="panel"><div class="panel-h"><h3>Tryb konserwacji ${on?'<span class="mt-on">WŁĄCZONY</span>':''}</h3></div>
+  <div style="padding:16px 18px;max-width:560px">
+    <p class="muted-cell" style="margin:0 0 12px;line-height:1.6">Gdy włączony, użytkownicy widzą ekran przerwy technicznej i nie mogą korzystać z aplikacji. Zespół (admin, moderator, dietetyk) ma dostęp normalnie.</p>
+    <label style="display:block;margin:10px 0 5px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold2);font-weight:600">Nagłówek</label>
+    <input id="mtTitle" value="${esc(m.title||'Przerwa techniczna')}">
+    <label style="display:block;margin:12px 0 5px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold2);font-weight:600">Treść dla użytkowników</label>
+    <textarea id="mtMsg" rows="3">${esc(m.message||'Pracujemy nad ulepszeniami. Wróć za chwilę.')}</textarea>
+    <div class="tools" style="margin-top:14px">
+      ${on
+        ? `<button class="btn gold" onclick="setMaintenance(false)">Wyłącz tryb konserwacji</button><button class="btn ghost sm" onclick="setMaintenance(true)">Zapisz treść</button>`
+        : `<button class="btn danger" onclick="setMaintenance(true)">Włącz tryb konserwacji</button>`}
+    </div>
+    <p id="mtStatus" class="muted-cell" style="margin-top:10px"></p>
+  </div></div>`;
+}
+async function setMaintenance(on){
+  const title=(document.getElementById('mtTitle')||{}).value||'Przerwa techniczna';
+  const message=(document.getElementById('mtMsg')||{}).value||'Pracujemy nad ulepszeniami. Wróć za chwilę.';
+  if(on&&!confirm('Włączyć tryb konserwacji? Użytkownicy stracą dostęp do aplikacji (zespół zachowa).'))return;
+  const st=document.getElementById('mtStatus'); if(st)st.textContent='Zapisywanie...';
+  try{
+    const {error}=await sb.from('app_config').upsert({key:'maintenance',value:{on:!!on,title:title,message:message},updated_at:new Date().toISOString()},{onConflict:'key'});
+    if(error)throw error;
+    if(st)st.textContent=on?'Tryb konserwacji WŁĄCZONY - użytkownicy nie mają dostępu.':'Tryb konserwacji wyłączony - aplikacja działa normalnie.';
+    await refreshAll();
+  }catch(e){ if(st)st.textContent='Błąd: '+(e.message||e); }
+}
 function renderCollections(){
   const approved=db.recipes.filter(r=>r.status==='approved');
   const rodCfg=db.config&&db.config.recipe_of_day; const rod=(rodCfg&&rodCfg.recipe_id)||null;
-  let html=`<div class="panel"><div class="panel-h"><h3>Przepis dnia</h3></div><div style="padding:16px 18px">
+  let html=maintenanceCardHTML()+`<div class="panel"><div class="panel-h"><h3>Przepis dnia</h3></div><div style="padding:16px 18px">
     <p class="muted-cell" style="margin-bottom:10px">Jeden przepis wyróżniony na samej górze strony głównej aplikacji.</p>
     <div class="tools">
       <select id="rodSel" style="min-width:260px;width:auto">${['<option value="">- wybierz przepis -</option>'].concat(approved.map(r=>`<option value="${r.id}" ${rod===r.id?'selected':''}>${esc(r.title)}</option>`)).join('')}</select>
